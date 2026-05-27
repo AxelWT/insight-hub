@@ -20,7 +20,7 @@ class AgentLogResponse(BaseModel):
     agent_name: str
     step: str
     input_data: dict | None = None
-    output_data: dict | None = None
+    output_data: list | dict | None = None
     decision: str
     timestamp: datetime
 
