@@ -2,37 +2,75 @@
 
 一个基于多 Agent 协作的自动化调研系统，能够自动搜索、分析、整理信息并生成结构化调研报告。
 
-## 项目架构
+## 技术栈
+
+- **前端**: Vue 3 + Vite + Element Plus + TypeScript
+- **后端**: FastAPI + WebSocket
+- **工作流引擎**: LangGraph
+- **LLM 框架**: LangChain + LiteLLM
+- **搜索 API**: Tavily
+- **数据库**: SQLite + SQLAlchemy
+
+## 项目结构
 
 ```
-my-project-2/
-├── app/
-│   ├── agents/           # AI Agent 定义
-│   │   ├── supervisor.py # 主管 Agent - 制定搜索策略
-│   │   ├── searcher.py   # 搜索 Agent - 执行搜索
-│   │   ├── crawler.py    # 爬虫 Agent - 抓取网页内容
-│   │   ├── evaluator.py  # 评估 Agent - 评估信息充分性
-│   │   └── writer.py     # 撰写 Agent - 生成调研报告
-│   ├── graph/
-│   │   ├── state.py      # 状态定义 (ResearchState)
-│   │   └── research_graph.py  # LangGraph 工作流定义
-│   ├── services/         # 外部服务封装
-│   │   ├── ai.py         # LLM 调用服务
-│   │   ├── search.py     # Tavily 搜索服务
-│   │   └── crawler.py    # 网页爬取服务
-│   ├── ui/               # Streamlit 前端
-│   │   ├── sidebar.py    # 侧边栏
-│   │   ├── research_page.py  # 调研页面
-│   │   ├── report_page.py    # 报告页面
-│   │   └── agent_visual.py   # Agent 可视化
-│   ├── models.py         # SQLAlchemy 数据模型
-│   ├── database.py       # 数据库配置
-│   ├── config.py         # 应用配置
-│   └── main.py           # Streamlit 入口
-├── docs/                 # PRD 文档
-├── .env.example          # 环境变量示例
-└── requirements.txt      # Python 依赖
+insight-hub/
+├── frontend/              # Vue 3 前端
+│   ├── src/
+│   │   ├── api/           # API 请求封装
+│   │   ├── stores/        # Pinia 状态管理
+│   │   ├── views/         # 页面组件
+│   │   ├── components/    # 通用组件
+│   │   └── router/        # Vue Router
+│   └── vite.config.ts
+├── backend/               # FastAPI 后端
+│   ├── api/               # REST + WebSocket 路由
+│   ├── core/              # 业务逻辑（Agent、工作流、服务）
+│   │   ├── agents/        # AI Agent 定义
+│   │   ├── graph/         # LangGraph 工作流
+│   │   └── services/      # 外部服务封装
+│   ├── schemas/           # Pydantic 数据模型
+│   └── main.py            # FastAPI 入口
+├── app/                   # (已废弃，业务代码已迁移到 backend/)
+├── docs/                  # 文档
+└── .env
 ```
+
+## 快速开始
+
+### 1. 安装后端依赖
+
+```bash
+pip install -r requirements.txt
+```
+
+### 2. 配置环境变量
+
+```bash
+cp .env.example .env
+```
+
+需要配置的 Key：
+- `TAVILY_API_KEY` - Tavily 搜索 API (必需)
+- `DEEPSEEK_API_KEY` / `CUSTOM_API_KEY` - 至少一个 LLM API Key
+
+### 3. 启动后端
+
+```bash
+uvicorn backend.main:app --reload --port 8000
+```
+
+API 文档访问 http://localhost:8000/docs
+
+### 4. 启动前端
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+前端访问 http://localhost:5173
 
 ## 核心原理
 
@@ -58,16 +96,7 @@ START → Supervisor → Searcher → Crawler → Evaluator
 | **Evaluator** | 信息评估者 | 评估信息覆盖度、深度、多样性，决定是否需要补充搜索 |
 | **Writer** | 报告撰写者 | 基于收集的材料生成结构化调研报告 |
 
-### 条件路由逻辑
-
-Evaluator 评估后会进行条件路由：
-- **信息充分** → 进入 Writer 生成报告
-- **信息不充分且未达最大轮次** → 返回 Searcher 补充搜索
-- **已达最大轮次** → 强制进入 Writer 生成报告
-
 ### 调研深度
-
-系统支持三种调研深度：
 
 | 深度 | 最大搜索轮次 | 预期来源数 | 适用场景 |
 |------|-------------|-----------|----------|
@@ -75,54 +104,16 @@ Evaluator 评估后会进行条件路由：
 | 标准 (standard) | 3 轮 | 10-15 个 | 常规调研 |
 | 深度 (deep) | 5 轮 | 15-25 个 | 深入研究 |
 
-## 技术栈
+## API 接口
 
-- **前端**: Streamlit
-- **工作流引擎**: LangGraph
-- **LLM 框架**: LangChain + LiteLLM
-- **搜索 API**: Tavily
-- **数据库**: SQLite + SQLAlchemy
-- **支持的 LLM**: OpenAI GPT-4o、Anthropic Claude、DeepSeek
-
-## 运行命令
-
-### 1. 安装依赖
-
-```bash
-pip install -r requirements.txt
-```
-
-### 2. 配置环境变量
-
-复制 `.env.example` 为 `.env` 并填入 API Key：
-
-```bash
-cp .env.example .env
-```
-
-需要配置的 Key：
-- `TAVILY_API_KEY` - Tavily 搜索 API (必需)
-- `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `DEEPSEEK_API_KEY` - 至少一个 LLM API Key
-
-### 3. 启动应用
-
-```bash
-streamlit run app/main.py
-```
-
-应用默认运行在 `http://localhost:8501`
-
-## 使用流程
-
-1. 在左侧边栏输入调研主题
-2. 选择 AI 模型和调研深度
-3. 点击"开始调研"
-4. 实时查看 Agent 的思考和决策过程
-5. 调研完成后查看结构化报告
-
-## 数据模型
-
-- **ResearchTask**: 调研任务（主题、状态、进度）
-- **Source**: 信息来源（URL、标题、内容）
-- **AgentLog**: Agent 操作日志（决策过程）
-- **Report**: 生成的调研报告
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `GET` | `/api/tasks` | 任务列表 |
+| `POST` | `/api/tasks` | 创建任务（自动启动调研） |
+| `GET` | `/api/tasks/{id}` | 任务详情 |
+| `DELETE` | `/api/tasks/{id}` | 删除任务 |
+| `GET` | `/api/tasks/{id}/report` | 获取报告 |
+| `GET` | `/api/tasks/{id}/sources` | 获取来源列表 |
+| `GET` | `/api/tasks/{id}/logs` | 获取 Agent 日志 |
+| `GET` | `/api/config/models` | 获取可用模型列表 |
+| `WS`  | `/api/ws/tasks/{id}` | 实时状态推送 |
