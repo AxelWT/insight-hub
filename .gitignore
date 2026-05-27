@@ -45,7 +45,7 @@ env/
 .ruff_cache/
 .mypy_cache/
 .pytest_cache/
-playwright-mcp/
+.playwright-mcp/
 
 # Claude
 .claude/
