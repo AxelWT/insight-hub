@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import MarkdownIt from 'markdown-it'
@@ -43,20 +43,75 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
+  await nextTick()
+  setupScrollSpy()
 })
 
-function extractToc(content: string): { title: string; level: number }[] {
-  const toc: { title: string; level: number }[] = []
+function slugify(text: string): string {
+  return text
+    .replace(/\s+/g, '-')
+    .replace(/[^\w一-鿿-]/g, '')
+    .toLowerCase()
+}
+
+function extractToc(content: string): { title: string; level: number; slug: string }[] {
+  const toc: { title: string; level: number; slug: string }[] = []
   for (const line of content.split('\n')) {
     if (line.startsWith('#')) {
       const level = line.split(' ')[0].length
       if (level <= 4) {
-        toc.push({ title: line.replace(/^#+\s*/, ''), level })
+        const title = line.replace(/^#+\s*/, '')
+        toc.push({ title, level, slug: slugify(title) })
       }
     }
   }
   return toc
 }
+
+function addHeadingIds(html: string): string {
+  return html.replace(/<h([1-4])([^>]*)>([\s\S]*?)<\/h\1>/g, (match, level, attrs, content) => {
+    if (/id=/.test(attrs)) return match
+    const text = content.replace(/<[^>]+>/g, '')
+    const id = slugify(text)
+    return `<h${level}${attrs} id="${id}">${content}</h${level}>`
+  })
+}
+
+const activeTocIndex = ref(-1)
+let observer: IntersectionObserver | null = null
+
+function setupScrollSpy() {
+  observer?.disconnect()
+  const headings = document.querySelectorAll('.vp-doc h1, .vp-doc h2, .vp-doc h3, .vp-doc h4')
+  if (!headings.length) return
+  observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          const slug = entry.target.id
+          const idx = extractToc(report.value?.content || '').findIndex(t => t.slug === slug)
+          if (idx >= 0) activeTocIndex.value = idx
+        }
+      }
+    },
+    { rootMargin: '-10% 0px -80% 0px' }
+  )
+  headings.forEach(h => observer!.observe(h))
+}
+
+function scrollToHeading(slug: string) {
+  const el = document.getElementById(slug)
+  if (el) el.scrollIntoView({ behavior: 'smooth' })
+}
+
+watch(activeTab, (tab) => {
+  if (tab === 'report') {
+    nextTick(setupScrollSpy)
+  } else {
+    observer?.disconnect()
+    activeTocIndex.value = -1
+  }
+})
 
 const sourcesByRound = computed(() => {
   const grouped: Record<number, Source[]> = {}
@@ -65,6 +120,10 @@ const sourcesByRound = computed(() => {
     grouped[s.search_round].push(s)
   }
   return grouped
+})
+
+onUnmounted(() => {
+  observer?.disconnect()
 })
 
 function downloadMarkdown() {
@@ -86,130 +145,253 @@ async function copyToClipboard() {
 </script>
 
 <template>
-  <div v-loading="loading">
-    <div v-if="task">
-      <el-row align="middle" style="margin-bottom: 16px">
-        <el-col :span="1">
-          <el-button @click="router.push('/')" text>←</el-button>
-        </el-col>
-        <el-col :span="23">
-          <h1 style="margin: 0">{{ task.topic }}</h1>
-        </el-col>
-      </el-row>
+  <div v-if="loading" style="padding: 60px; text-align: center; color: var(--vp-c-text-3)">
+    加载中...
+  </div>
 
-      <el-row :gutter="16" style="margin-bottom: 24px">
-        <el-col :span="6">
-          <el-statistic title="字数" :value="report?.word_count || 0" />
-        </el-col>
-        <el-col :span="6">
-          <el-statistic title="来源数" :value="report?.source_count || 0" />
-        </el-col>
-        <el-col :span="6">
-          <el-statistic title="搜索轮次" :value="task.search_rounds" />
-        </el-col>
-        <el-col :span="6">
-          <el-statistic title="深度" :value="depthLabels[task.depth] || task.depth" />
-        </el-col>
-      </el-row>
+  <div v-else-if="task">
+    <!-- Header -->
+    <div class="report-header">
+      <button class="vp-btn vp-btn-text" @click="router.push('/')">&larr; 返回</button>
+      <h1>{{ task.topic }}</h1>
 
-      <el-empty v-if="!report" description="报告尚未生成" />
-
-      <template v-else>
-        <el-tabs v-model="activeTab">
-          <el-tab-pane label="📄 报告" name="report">
-            <el-row :gutter="24">
-              <el-col :span="6">
-                <h3>目录</h3>
-                <div v-for="(item, i) in extractToc(report.content)" :key="i"
-                     :style="{ paddingLeft: (item.level - 1) * 16 + 'px', fontSize: '14px', lineHeight: '2' }">
-                  {{ item.title }}
-                </div>
-              </el-col>
-              <el-col :span="18">
-                <div v-html="md.render(report.content)" class="report-content" />
-              </el-col>
-            </el-row>
-
-            <el-divider />
-            <el-row :gutter="16">
-              <el-col :span="8">
-                <el-button @click="downloadMarkdown" style="width: 100%">📥 下载 Markdown</el-button>
-              </el-col>
-              <el-col :span="8">
-                <el-button @click="copyToClipboard" style="width: 100%">📋 复制到剪贴板</el-button>
-              </el-col>
-            </el-row>
-          </el-tab-pane>
-
-          <el-tab-pane label="📚 来源" name="sources">
-            <div v-if="!sources.length">
-              <el-empty description="无来源信息" />
-            </div>
-            <template v-for="(roundSources, round) in sourcesByRound" :key="round">
-              <h4>第 {{ round }} 轮搜索</h4>
-              <el-collapse>
-                <el-collapse-item
-                  v-for="(source, i) in roundSources"
-                  :key="source.id"
-                  :title="`[${i + 1}] ${source.title || source.url.slice(0, 60)}`"
-                >
-                  <p><strong>URL：</strong><a :href="source.url" target="_blank">{{ source.url }}</a></p>
-                  <p v-if="source.snippet"><strong>摘要：</strong>{{ source.snippet.slice(0, 500) }}</p>
-                  <p v-if="source.relevance_score"><strong>相关性：</strong>{{ source.relevance_score.toFixed(2) }}</p>
-                </el-collapse-item>
-              </el-collapse>
-            </template>
-          </el-tab-pane>
-
-          <el-tab-pane label="🤖 Agent 日志" name="logs">
-            <div v-if="!logs.length">
-              <el-empty description="无 Agent 日志" />
-            </div>
-            <el-timeline>
-              <el-timeline-item
-                v-for="log in logs"
-                :key="log.id"
-                :timestamp="new Date(log.timestamp).toLocaleTimeString('zh-CN')"
-                placement="top"
-              >
-                <el-card shadow="never">
-                  <template #header>
-                    {{ agentIcons[log.agent_name] || '⚙️' }} [{{ log.agent_name }}] {{ log.step }}
-                  </template>
-                  <p v-if="log.decision"><strong>决策：</strong>{{ log.decision }}</p>
-                  <pre v-if="log.output_data" style="white-space: pre-wrap; font-size: 12px">{{ JSON.stringify(log.output_data, null, 2) }}</pre>
-                </el-card>
-              </el-timeline-item>
-            </el-timeline>
-          </el-tab-pane>
-        </el-tabs>
-      </template>
+      <div class="vp-stat-row">
+        <div class="vp-stat">
+          <span class="vp-stat-value">{{ report?.word_count || 0 }}</span>
+          <span class="vp-stat-label">字数</span>
+        </div>
+        <div class="vp-stat">
+          <span class="vp-stat-value">{{ report?.source_count || 0 }}</span>
+          <span class="vp-stat-label">来源</span>
+        </div>
+        <div class="vp-stat">
+          <span class="vp-stat-value">{{ task.search_rounds }}</span>
+          <span class="vp-stat-label">搜索轮次</span>
+        </div>
+        <div class="vp-stat">
+          <span class="vp-stat-value">{{ depthLabels[task.depth] || task.depth }}</span>
+          <span class="vp-stat-label">深度</span>
+        </div>
+      </div>
     </div>
+
+    <div v-if="!report" class="vp-card" style="text-align: center; padding: 48px">
+      <div style="font-size: 48px; margin-bottom: 12px">📄</div>
+      <p class="text-muted">报告尚未生成</p>
+    </div>
+
+    <template v-else>
+      <!-- Tabs -->
+      <div class="vp-tabs">
+        <button
+          :class="['vp-tab', { active: activeTab === 'report' }]"
+          @click="activeTab = 'report'"
+        >报告</button>
+        <button
+          :class="['vp-tab', { active: activeTab === 'sources' }]"
+          @click="activeTab = 'sources'"
+        >来源 ({{ sources.length }})</button>
+        <button
+          :class="['vp-tab', { active: activeTab === 'logs' }]"
+          @click="activeTab = 'logs'"
+        >Agent 日志</button>
+      </div>
+
+      <!-- Report Tab -->
+      <div v-if="activeTab === 'report'" class="report-layout">
+        <div class="report-body">
+          <div v-html="addHeadingIds(md.render(report.content))" class="vp-doc" />
+
+          <div class="report-actions">
+            <button class="vp-btn vp-btn-ghost" @click="downloadMarkdown">下载 Markdown</button>
+            <button class="vp-btn vp-btn-ghost" @click="copyToClipboard">复制内容</button>
+          </div>
+        </div>
+
+        <div class="report-toc">
+          <div class="toc-title">目录</div>
+          <div
+            v-for="(item, i) in extractToc(report.content)"
+            :key="i"
+            class="toc-item"
+            :class="{ active: activeTocIndex === i }"
+            :style="{ paddingLeft: (item.level - 1) * 16 + 'px' }"
+            @click="scrollToHeading(item.slug)"
+          >
+            {{ item.title }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Sources Tab -->
+      <div v-if="activeTab === 'sources'">
+        <div v-if="!sources.length" class="vp-card" style="text-align: center; padding: 48px">
+          <p class="text-muted">无来源信息</p>
+        </div>
+
+        <template v-for="(roundSources, round) in sourcesByRound" :key="round">
+          <h3 style="margin: 24px 0 12px; font-size: 15px">第 {{ round }} 轮搜索</h3>
+          <div
+            v-for="(source, i) in roundSources"
+            :key="source.id"
+            class="vp-card source-card"
+          >
+            <div class="source-header">
+              <span class="source-index">[{{ i + 1 }}]</span>
+              <a :href="source.url" target="_blank" class="source-title">{{ source.title || source.url.slice(0, 60) }}</a>
+            </div>
+            <div v-if="source.snippet" class="source-snippet">{{ source.snippet.slice(0, 300) }}</div>
+            <div class="source-footer">
+              <a :href="source.url" target="_blank" class="source-url">{{ source.url }}</a>
+              <span v-if="source.relevance_score" class="vp-tag vp-tag-gray">相关性 {{ source.relevance_score.toFixed(2) }}</span>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- Logs Tab -->
+      <div v-if="activeTab === 'logs'">
+        <div v-if="!logs.length" class="vp-card" style="text-align: center; padding: 48px">
+          <p class="text-muted">无 Agent 日志</p>
+        </div>
+
+        <div v-else class="vp-timeline">
+          <div v-for="log in logs" :key="log.id" class="vp-timeline-item done">
+            <div class="vp-timeline-dot" />
+            <div class="vp-timeline-timestamp">
+              {{ new Date(log.timestamp).toLocaleTimeString('zh-CN') }}
+            </div>
+            <div class="vp-timeline-card">
+              <div class="vp-timeline-card-header">
+                {{ agentIcons[log.agent_name] || '⚙️' }} {{ log.agent_name }} &mdash; {{ log.step }}
+              </div>
+              <div v-if="log.decision" class="vp-timeline-card-body">
+                {{ log.decision }}
+              </div>
+              <pre
+                v-if="log.output_data"
+                style="margin: 8px 0 0; white-space: pre-wrap; font-size: 12px; color: var(--vp-c-text-3); max-height: 200px; overflow: auto"
+              >{{ JSON.stringify(log.output_data, null, 2) }}</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
   </div>
 </template>
 
 <style scoped>
-.report-content {
-  line-height: 1.8;
-  font-size: 15px;
+.report-header {
+  margin-bottom: 8px;
 }
-.report-content h1, .report-content h2, .report-content h3 {
-  margin-top: 24px;
+
+.report-header h1 {
+  font-size: 28px;
+  margin: 8px 0 4px;
+}
+
+.report-layout {
+  display: grid;
+  grid-template-columns: 1fr 200px;
+  gap: 32px;
+}
+
+.report-toc {
+  position: sticky;
+  top: 32px;
+  align-self: start;
+}
+
+.toc-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--vp-c-text-3);
   margin-bottom: 12px;
 }
-.report-content p {
-  margin-bottom: 12px;
-}
-.report-content code {
-  background: var(--el-fill-color-light);
-  padding: 2px 6px;
-  border-radius: 4px;
+
+.toc-item {
   font-size: 13px;
+  color: var(--vp-c-text-3);
+  line-height: 2;
+  cursor: pointer;
+  transition: color var(--vp-transition);
 }
-.report-content pre {
-  background: var(--el-fill-color-darker);
-  padding: 16px;
-  border-radius: 8px;
-  overflow-x: auto;
+
+.toc-item:hover {
+  color: var(--vp-c-text-1);
+}
+
+.toc-item.active {
+  color: var(--vp-c-brand);
+  font-weight: 600;
+}
+
+.report-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--vp-c-divider-light);
+}
+
+/* Sources */
+.source-card {
+  margin-bottom: 12px;
+  padding: 16px 20px;
+}
+
+.source-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.source-index {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--vp-c-brand);
+  flex-shrink: 0;
+}
+
+.source-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--vp-c-text-1);
+  text-decoration: none;
+}
+
+.source-title:hover {
+  color: var(--vp-c-brand);
+}
+
+.source-snippet {
+  font-size: 13px;
+  color: var(--vp-c-text-3);
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+.source-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.source-url {
+  font-size: 12px;
+  color: var(--vp-c-text-3);
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 70%;
+}
+
+.source-url:hover {
+  color: var(--vp-c-brand);
 }
 </style>
