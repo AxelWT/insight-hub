@@ -69,37 +69,72 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div v-loading="loading">
-    <div v-if="task">
-      <h1>🔍 调研进行中</h1>
-      <h2>{{ task.topic }}</h2>
-      <p style="color: var(--el-text-color-secondary)">
-        模型: {{ task.model }} |
-        深度: {{ depthLabels[task.depth] || task.depth }} |
-        创建时间: {{ new Date(task.created_at).toLocaleTimeString('zh-CN') }}
-      </p>
+  <div v-if="loading" style="padding: 60px; text-align: center; color: var(--vp-c-text-3)">
+    加载中...
+  </div>
 
-      <el-progress :percentage="task.progress" :stroke-width="20" striped striped-flow style="margin: 16px 0" />
-
-      <div v-if="task.status === 'completed'" style="text-align: center; margin-top: 32px">
-        <el-result icon="success" title="调研完成！">
-          <template #extra>
-            <el-button type="primary" @click="router.push(`/report/${task.id}`)">📄 查看报告</el-button>
-          </template>
-        </el-result>
+  <div v-else-if="task">
+    <!-- Header -->
+    <div class="research-header">
+      <button class="vp-btn vp-btn-text" @click="router.push('/')">&larr; 返回</button>
+      <h1>{{ task.topic }}</h1>
+      <div class="research-meta">
+        <span class="vp-tag vp-tag-brand">{{ depthLabels[task.depth] || task.depth }}调研</span>
+        <span class="text-muted" style="font-size: 13px">模型: {{ task.model }}</span>
+        <span class="text-muted" style="font-size: 13px">{{ new Date(task.created_at).toLocaleTimeString('zh-CN') }}</span>
       </div>
+    </div>
 
-      <div v-else-if="task.status === 'failed'">
-        <el-result icon="error" :title="`调研失败: ${task.error_message || '未知错误'}`">
-          <template #extra>
-            <el-button @click="router.push('/')">← 返回首页</el-button>
-          </template>
-        </el-result>
+    <!-- Progress -->
+    <div class="vp-card" style="margin-bottom: 24px">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px">
+        <span style="font-size: 14px; font-weight: 600; color: var(--vp-c-text-1)">调研进度</span>
+        <span style="font-size: 14px; font-weight: 700; color: var(--vp-c-brand)">{{ task.progress }}%</span>
       </div>
+      <div class="vp-progress">
+        <div class="vp-progress-bar" :style="{ width: task.progress + '%' }" />
+      </div>
+      <div v-if="task.current_step" style="margin-top: 8px; font-size: 13px; color: var(--vp-c-text-3)">
+        {{ task.current_step }}
+      </div>
+    </div>
 
-      <div v-else>
-        <AgentTimeline :logs="typedAgentLogs" :current-step="task.current_step" />
-      </div>
+    <!-- Completed State -->
+    <div v-if="task.status === 'completed'" class="vp-card" style="text-align: center; padding: 48px">
+      <div style="font-size: 48px; margin-bottom: 16px">✅</div>
+      <h2 style="margin: 0 0 8px">调研完成</h2>
+      <p class="text-muted" style="margin-bottom: 24px">报告已生成，点击查看详细内容</p>
+      <button class="vp-btn vp-btn-primary" @click="router.push(`/report/${task.id}`)">查看报告</button>
+    </div>
+
+    <!-- Failed State -->
+    <div v-else-if="task.status === 'failed'" class="vp-card" style="text-align: center; padding: 48px">
+      <div style="font-size: 48px; margin-bottom: 16px">❌</div>
+      <h2 style="margin: 0 0 8px; color: var(--vp-c-red)">调研失败</h2>
+      <p class="text-muted" style="margin-bottom: 24px">{{ task.error_message || '发生未知错误' }}</p>
+      <button class="vp-btn vp-btn-ghost" @click="router.push('/')">返回首页</button>
+    </div>
+
+    <!-- Agent Timeline -->
+    <div v-else>
+      <AgentTimeline :logs="typedAgentLogs" :current-step="task.current_step" />
     </div>
   </div>
 </template>
+
+<style scoped>
+.research-header {
+  margin-bottom: 24px;
+}
+
+.research-header h1 {
+  font-size: 24px;
+  margin: 8px 0 12px;
+}
+
+.research-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+</style>

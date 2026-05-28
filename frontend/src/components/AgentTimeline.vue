@@ -41,18 +41,18 @@ const remainingAgents = computed(() => {
 
 const statusInfo = computed(() => {
   const step = props.currentStep || ''
-  const map: Record<string, { title: string; desc: string }> = {
-    规划: { title: '🤔 规划中', desc: 'Agent 正在制定搜索策略...' },
-    搜索: { title: '🔍 搜索中', desc: 'Agent 正在搜索相关信息...' },
-    爬取: { title: '🕷️ 爬取中', desc: 'Agent 正在爬取网页内容...' },
-    评估: { title: '📊 评估中', desc: 'Agent 正在评估信息充分性...' },
-    撰写: { title: '✍️ 撰写中', desc: 'Agent 正在撰写调研报告...' },
-    完成: { title: '✅ 已完成', desc: '调研报告已生成！' },
+  const map: Record<string, { title: string; desc: string; icon: string }> = {
+    规划: { title: '规划中', desc: 'Agent 正在制定搜索策略...', icon: '🤔' },
+    搜索: { title: '搜索中', desc: 'Agent 正在搜索相关信息...', icon: '🔍' },
+    爬取: { title: '爬取中', desc: 'Agent 正在爬取网页内容...', icon: '🕷️' },
+    评估: { title: '评估中', desc: 'Agent 正在评估信息充分性...', icon: '📊' },
+    撰写: { title: '撰写中', desc: 'Agent 正在撰写调研报告...', icon: '✍️' },
+    完成: { title: '已完成', desc: '调研报告已生成！', icon: '✅' },
   }
   for (const [key, val] of Object.entries(map)) {
     if (step.includes(key)) return val
   }
-  return { title: '🔄 进行中', desc: step }
+  return { title: '进行中', desc: step, icon: '🔄' }
 })
 
 function formatOutput(output: unknown): string {
@@ -64,43 +64,55 @@ function formatOutput(output: unknown): string {
 </script>
 
 <template>
-  <div v-if="!logs.length && !currentStep">
-    <el-empty description="Agent 尚未开始工作..." :image-size="60" />
+  <div v-if="!logs.length && !currentStep" class="vp-card" style="text-align: center; padding: 48px">
+    <div style="font-size: 48px; margin-bottom: 12px">⏳</div>
+    <p class="text-muted">Agent 准备中...</p>
   </div>
 
   <div v-else>
-    <h3>{{ statusInfo.title }}</h3>
-    <p style="color: var(--el-text-color-secondary)">{{ statusInfo.desc }}</p>
+    <!-- Current Status -->
+    <div class="vp-card" style="margin-bottom: 24px">
+      <div style="display: flex; align-items: center; gap: 12px">
+        <span style="font-size: 28px">{{ statusInfo.icon }}</span>
+        <div>
+          <div style="font-size: 16px; font-weight: 600; color: var(--vp-c-text-1)">{{ statusInfo.title }}</div>
+          <div style="font-size: 13px; color: var(--vp-c-text-3)">{{ statusInfo.desc }}</div>
+        </div>
+      </div>
+    </div>
 
-    <el-divider />
-
-    <h4>📋 执行时间线</h4>
-    <el-timeline>
-      <el-timeline-item
+    <!-- Timeline -->
+    <h3 style="font-size: 16px; margin: 0 0 16px">执行时间线</h3>
+    <div class="vp-timeline">
+      <div
         v-for="(log, i) in logs"
         :key="i"
-        :timestamp="log.step"
-        placement="top"
-        :hollow="i < logs.length - 1"
+        class="vp-timeline-item done"
       >
-        <el-card shadow="never">
-          <template #header>
-            <span>{{ stepIcons[log.agent] || '⚙️' }} {{ log.step }}</span>
-          </template>
-          <div v-if="log.decision">
-            <strong>决策：</strong>{{ log.decision }}
+        <div class="vp-timeline-dot" />
+        <div class="vp-timeline-card">
+          <div class="vp-timeline-card-header">
+            {{ stepIcons[log.agent] || '⚙️' }} {{ log.step }}
+          </div>
+          <div v-if="log.decision" class="vp-timeline-card-body">
+            {{ log.decision }}
           </div>
           <div v-if="log.output" style="margin-top: 8px">
-            <strong>输出：</strong>
-            <pre style="white-space: pre-wrap; font-size: 12px; max-height: 200px; overflow: auto">{{ formatOutput(log.output) }}</pre>
+            <pre style="white-space: pre-wrap; font-size: 12px; color: var(--vp-c-text-3); max-height: 200px; overflow: auto; margin: 0">{{ formatOutput(log.output) }}</pre>
           </div>
-        </el-card>
-      </el-timeline-item>
-    </el-timeline>
+        </div>
+      </div>
 
-    <div v-if="remainingAgents.length && currentStep !== '报告撰写完成'">
-      <div v-for="agent in remainingAgents" :key="agent" style="padding: 4px 0; color: var(--el-text-color-secondary)">
-        {{ stepIcons[agent] || '⚙️' }} ⏳ {{ stepLabels[agent] || agent }}
+      <!-- Pending Steps -->
+      <div
+        v-for="agent in remainingAgents"
+        :key="agent"
+        class="vp-timeline-item pending"
+      >
+        <div class="vp-timeline-dot" />
+        <div style="font-size: 13px; color: var(--vp-c-text-3); padding: 4px 0">
+          {{ stepIcons[agent] || '⚙️' }} {{ stepLabels[agent] || agent }}
+        </div>
       </div>
     </div>
   </div>

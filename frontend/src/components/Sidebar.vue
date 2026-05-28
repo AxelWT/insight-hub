@@ -17,6 +17,7 @@ const form = ref<TaskCreateParams>({
 
 const models = ref<{ id: string; name: string }[]>([])
 const submitting = ref(false)
+const showForm = ref(false)
 
 const depthOptions = [
   { value: 'quick', label: '快速（1轮搜索）' },
@@ -41,6 +42,7 @@ async function handleSubmit() {
     const task = await taskStore.addTask(form.value)
     form.value.topic = ''
     form.value.description = ''
+    showForm.value = false
     router.push(`/research/${task.id}`)
   } finally {
     submitting.value = false
@@ -70,59 +72,104 @@ const depthLabels: Record<string, string> = {
   standard: '标准',
   deep: '深度',
 }
+
+function truncate(text: string, len: number) {
+  return text.length > len ? text.slice(0, len) + '...' : text
+}
 </script>
 
 <template>
-  <div style="padding: 16px; height: 100%; overflow-y: auto">
-    <h2 style="margin: 0 0 16px">🔍 AI 调研平台</h2>
-
-    <el-collapse model-value="form">
-      <el-collapse-item title="📝 新建调研" name="form">
-        <el-form :model="form" label-position="top" @submit.prevent="handleSubmit">
-          <el-form-item label="调研主题">
-            <el-input v-model="form.topic" placeholder="例如：2024年中国新能源汽车市场分析" />
-          </el-form-item>
-          <el-form-item label="补充说明（可选）">
-            <el-input v-model="form.description" type="textarea" :rows="2" placeholder="重点关注比亚迪、特斯拉的市占率变化" />
-          </el-form-item>
-          <el-form-item label="AI 模型">
-            <el-select v-model="form.model" style="width: 100%">
-              <el-option v-for="m in models" :key="m.id" :label="m.name" :value="m.id" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="调研深度">
-            <el-select v-model="form.depth" style="width: 100%">
-              <el-option v-for="d in depthOptions" :key="d.value" :label="d.label" :value="d.value" />
-            </el-select>
-          </el-form-item>
-          <el-button type="primary" :loading="submitting" @click="handleSubmit" style="width: 100%">
-            开始调研
-          </el-button>
-        </el-form>
-      </el-collapse-item>
-    </el-collapse>
-
-    <el-divider />
-
-    <h4>历史调研</h4>
-    <div v-if="taskStore.loading" v-loading="true" style="height: 100px" />
-    <div v-else-if="taskStore.tasks.length === 0" style="color: var(--el-text-color-secondary)">
-      暂无历史调研记录
+  <div class="sidebar-inner">
+    <!-- Brand -->
+    <div class="sidebar-brand">
+      <span class="sidebar-brand-icon">🔬</span>
+      <span>AI 调研平台</span>
     </div>
-    <div v-else>
-      <div
-        v-for="task in taskStore.tasks"
-        :key="task.id"
-        class="task-item"
-        @click="goToTask(task)"
+
+    <div class="sidebar-divider" />
+
+    <!-- New Research Button / Form -->
+    <div class="sidebar-section">
+      <button
+        v-if="!showForm"
+        class="vp-btn vp-btn-primary"
+        style="width: 100%"
+        @click="showForm = true"
       >
-        <div class="task-title">
-          {{ statusIcons[task.status] || '❓' }}
-          {{ task.topic.length > 30 ? task.topic.slice(0, 30) + '...' : task.topic }}
+        + 新建调研
+      </button>
+
+      <div v-else class="new-research-form">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px">
+          <span style="font-size: 14px; font-weight: 600; color: var(--vp-c-text-1)">新建调研</span>
+          <button class="vp-btn vp-btn-text" style="padding: 4px 8px; font-size: 18px" @click="showForm = false">&times;</button>
         </div>
-        <div class="task-meta">
-          {{ depthLabels[task.depth] || task.depth }} |
-          {{ new Date(task.created_at).toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) }}
+
+        <div class="vp-form-item">
+          <label class="vp-form-label">调研主题</label>
+          <input v-model="form.topic" class="vp-input" placeholder="例如：2024年中国新能源汽车市场分析" @keyup.enter="handleSubmit" />
+        </div>
+
+        <div class="vp-form-item">
+          <label class="vp-form-label">补充说明（可选）</label>
+          <textarea v-model="form.description" class="vp-input" rows="2" placeholder="重点关注比亚迪、特斯拉的市占率变化" />
+        </div>
+
+        <div class="vp-form-item">
+          <label class="vp-form-label">AI 模型</label>
+          <select v-model="form.model" class="vp-select">
+            <option v-for="m in models" :key="m.id" :value="m.id">{{ m.name }}</option>
+          </select>
+        </div>
+
+        <div class="vp-form-item">
+          <label class="vp-form-label">调研深度</label>
+          <select v-model="form.depth" class="vp-select">
+            <option v-for="d in depthOptions" :key="d.value" :value="d.value">{{ d.label }}</option>
+          </select>
+        </div>
+
+        <button
+          class="vp-btn vp-btn-primary"
+          style="width: 100%"
+          :disabled="submitting || !form.topic.trim()"
+          @click="handleSubmit"
+        >
+          {{ submitting ? '提交中...' : '开始调研' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="sidebar-divider" />
+
+    <!-- History List -->
+    <div class="sidebar-section" style="flex: 1; overflow-y: auto; padding-bottom: 20px">
+      <div class="sidebar-section-title">历史调研</div>
+
+      <div v-if="taskStore.loading" style="padding: 16px; text-align: center; color: var(--vp-c-text-3); font-size: 13px">
+        加载中...
+      </div>
+
+      <div v-else-if="taskStore.tasks.length === 0" style="padding: 16px; text-align: center; color: var(--vp-c-text-3); font-size: 13px">
+        暂无历史记录
+      </div>
+
+      <div v-else>
+        <div
+          v-for="task in taskStore.tasks"
+          :key="task.id"
+          class="sidebar-task-item"
+          :data-status="task.status"
+          @click="goToTask(task)"
+        >
+          <div class="task-title">
+            {{ statusIcons[task.status] || '' }} {{ truncate(task.topic, 28) }}
+          </div>
+          <div class="task-meta">
+            {{ depthLabels[task.depth] || task.depth }}
+            &middot;
+            {{ new Date(task.created_at).toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) }}
+          </div>
         </div>
       </div>
     </div>
@@ -130,22 +177,16 @@ const depthLabels: Record<string, string> = {
 </template>
 
 <style scoped>
-.task-item {
-  padding: 8px 12px;
-  cursor: pointer;
-  border-radius: 4px;
-  margin-bottom: 4px;
+.sidebar-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
-.task-item:hover {
-  background: var(--el-fill-color-light);
-}
-.task-title {
-  font-size: 14px;
-  line-height: 1.4;
-}
-.task-meta {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  margin-top: 2px;
+
+.new-research-form {
+  background: var(--vp-c-bg);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: var(--vp-radius);
+  padding: 16px;
 }
 </style>

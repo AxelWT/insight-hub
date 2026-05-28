@@ -26,6 +26,26 @@ const depthLabels: Record<string, string> = {
   deep: '深度',
 }
 
+const statusTagClass: Record<string, string> = {
+  pending: 'vp-tag-gray',
+  planning: 'vp-tag-yellow',
+  searching: 'vp-tag-brand',
+  evaluating: 'vp-tag-yellow',
+  writing: 'vp-tag-brand',
+  completed: 'vp-tag-green',
+  failed: 'vp-tag-red',
+}
+
+const statusLabels: Record<string, string> = {
+  pending: '等待中',
+  planning: '规划中',
+  searching: '搜索中',
+  evaluating: '评估中',
+  writing: '撰写中',
+  completed: '已完成',
+  failed: '失败',
+}
+
 function goToTask(task: { id: number; status: string }) {
   if (task.status === 'completed') {
     router.push(`/report/${task.id}`)
@@ -33,35 +53,151 @@ function goToTask(task: { id: number; status: string }) {
     router.push(`/research/${task.id}`)
   }
 }
+
+function formatDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString('zh-CN', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
 </script>
 
 <template>
   <div>
-    <h1>🔍 AI 调研平台</h1>
-    <p>输入调研主题，AI Agent 将自动搜索、分析、整理，生成结构化调研报告。</p>
+    <!-- Hero -->
+    <div class="hero-section">
+      <h1>AI 调研平台</h1>
+      <p class="hero-desc">
+        输入调研主题，AI Agent 将自动搜索、分析、整理，生成结构化调研报告。
+      </p>
+    </div>
 
-    <el-divider />
+    <!-- Recent Tasks -->
+    <div class="section">
+      <h2>最近调研</h2>
 
-    <h3>最近调研</h3>
-    <div v-if="taskStore.loading" v-loading="true" style="height: 200px" />
-    <el-empty v-else-if="taskStore.tasks.length === 0" description="暂无历史调研记录，请在左侧创建新的调研" />
-    <el-table v-else :data="taskStore.tasks.slice(0, 10)" @row-click="goToTask" style="cursor: pointer">
-      <el-table-column label="状态" width="60">
-        <template #default="{ row }">
-          {{ statusIcons[row.status] || '❓' }}
-        </template>
-      </el-table-column>
-      <el-table-column prop="topic" label="调研主题" />
-      <el-table-column label="深度" width="80">
-        <template #default="{ row }">
-          {{ depthLabels[row.depth] || row.depth }}
-        </template>
-      </el-table-column>
-      <el-table-column label="创建时间" width="140">
-        <template #default="{ row }">
-          {{ new Date(row.created_at).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) }}
-        </template>
-      </el-table-column>
-    </el-table>
+      <div v-if="taskStore.loading" style="padding: 40px; text-align: center; color: var(--vp-c-text-3)">
+        加载中...
+      </div>
+
+      <div v-else-if="taskStore.tasks.length === 0" class="empty-state">
+        <div class="empty-icon">📋</div>
+        <p>暂无调研记录</p>
+        <p class="text-muted" style="font-size: 13px">在左侧点击「新建调研」开始</p>
+      </div>
+
+      <div v-else class="task-grid">
+        <div
+          v-for="task in taskStore.tasks.slice(0, 12)"
+          :key="task.id"
+          class="vp-card clickable task-card"
+          @click="goToTask(task)"
+        >
+          <div class="task-card-header">
+            <h3 class="task-card-title">{{ task.topic }}</h3>
+            <span :class="['vp-tag', statusTagClass[task.status] || 'vp-tag-gray']">
+              {{ statusLabels[task.status] || task.status }}
+            </span>
+          </div>
+
+          <div v-if="task.description" class="task-card-desc">
+            {{ task.description.slice(0, 80) }}{{ task.description.length > 80 ? '...' : '' }}
+          </div>
+
+          <div class="task-card-footer">
+            <span class="text-muted">{{ depthLabels[task.depth] || task.depth }}调研</span>
+            <span class="text-muted">{{ formatDate(task.created_at) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
+
+<style scoped>
+.hero-section {
+  margin-bottom: 40px;
+}
+
+.hero-section h1 {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  background: linear-gradient(135deg, var(--vp-c-brand) 0%, var(--vp-c-brand-light) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-desc {
+  color: var(--vp-c-text-2);
+  font-size: 16px;
+  margin: 0;
+  line-height: 1.7;
+}
+
+.section h2 {
+  font-size: 20px;
+  margin: 0 0 20px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.empty-state p {
+  margin: 4px 0;
+  color: var(--vp-c-text-2);
+}
+
+.task-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.task-card {
+  padding: 20px;
+}
+
+.task-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.task-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.5;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.task-card-desc {
+  font-size: 13px;
+  color: var(--vp-c-text-3);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.task-card-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+}
+</style>

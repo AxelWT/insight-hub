@@ -3,19 +3,14 @@ import Sidebar from './components/Sidebar.vue'
 </script>
 
 <template>
-  <el-container style="height: 100vh">
-    <el-aside width="320px" style="border-right: 1px solid var(--el-border-color)">
+  <div class="vp-layout">
+    <aside class="vp-sidebar">
       <Sidebar />
-    </el-aside>
-    <el-main>
-      <router-view />
-    </el-main>
-  </el-container>
+    </aside>
+    <main class="vp-main">
+      <div class="vp-main-content">
+        <router-view />
+      </div>
+    </main>
+  </div>
 </template>
-
-<style>
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
-</style>
