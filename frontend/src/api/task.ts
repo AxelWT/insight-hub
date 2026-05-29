@@ -6,6 +6,11 @@ export interface Task {
   description: string
   model: string
   depth: string
+  task_type: 'search' | 'website'
+  urls: string[]
+  questions: string
+  crawl_depth: number
+  max_pages: number
   status: string
   progress: number
   current_step: string
@@ -19,7 +24,12 @@ export interface TaskCreateParams {
   topic: string
   description?: string
   model: string
-  depth: string
+  depth?: string
+  task_type?: 'search' | 'website'
+  urls?: string[]
+  questions?: string
+  crawl_depth?: number
+  max_pages?: number
 }
 
 export function getTasks(): Promise<{ tasks: Task[] }> {

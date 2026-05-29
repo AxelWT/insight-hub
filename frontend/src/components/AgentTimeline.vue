@@ -11,6 +11,7 @@ export interface LogEntry {
 const props = defineProps<{
   logs: LogEntry[]
   currentStep?: string
+  taskType?: string
 }>()
 
 const stepIcons: Record<string, string> = {
@@ -19,6 +20,8 @@ const stepIcons: Record<string, string> = {
   crawler: '🕷️',
   evaluator: '📊',
   writer: '✍️',
+  website_crawler: '🕷️',
+  website_writer: '✍️',
 }
 
 const stepLabels: Record<string, string> = {
@@ -27,16 +30,23 @@ const stepLabels: Record<string, string> = {
   crawler: '爬取网页内容',
   evaluator: '评估信息充分性',
   writer: '撰写调研报告',
+  website_crawler: '爬取网站内容',
+  website_writer: '分析内容并撰写报告',
 }
 
 const allAgents = ['supervisor', 'searcher', 'crawler', 'evaluator', 'writer']
+const websiteAgents = ['website_crawler', 'website_writer']
 
 const completedAgents = computed(() => {
   return new Set(props.logs.map((l) => l.agent))
 })
 
+const agentList = computed(() => {
+  return props.taskType === 'website' ? websiteAgents : allAgents
+})
+
 const remainingAgents = computed(() => {
-  return allAgents.filter((a) => !completedAgents.value.has(a))
+  return agentList.value.filter((a) => !completedAgents.value.has(a))
 })
 
 const statusInfo = computed(() => {

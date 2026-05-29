@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -12,12 +13,21 @@ from backend.api.reports import router as reports_router
 from backend.api.config import router as config_router
 from backend.api.websocket import router as ws_router, broadcast
 
+# 配置日志
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)-7s | %(name)s | %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Path("./data").mkdir(exist_ok=True)
     init_db()
     set_broadcaster(broadcast)
+    logger.info("AI 调研平台启动完成")
     yield
 
 

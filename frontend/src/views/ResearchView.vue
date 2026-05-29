@@ -20,6 +20,11 @@ const depthLabels: Record<string, string> = {
   deep: '深度',
 }
 
+const typeLabels: Record<string, string> = {
+  search: '🔍 主题调研',
+  website: '🌐 网站调研',
+}
+
 async function fetchTask() {
   const id = Number(route.params.id)
   try {
@@ -79,7 +84,18 @@ onUnmounted(() => {
       <button class="vp-btn vp-btn-text" @click="router.push('/')">&larr; 返回</button>
       <h1>{{ task.topic }}</h1>
       <div class="research-meta">
-        <span class="vp-tag vp-tag-brand">{{ depthLabels[task.depth] || task.depth }}调研</span>
+        <span
+          :class="['type-badge', task.task_type === 'website' ? 'type-website' : 'type-search']"
+        >
+          {{ typeLabels[task.task_type] || '调研' }}
+        </span>
+        <span v-if="task.task_type === 'search'" class="vp-tag vp-tag-brand">{{ depthLabels[task.depth] || task.depth }}调研</span>
+        <span v-if="task.task_type === 'website'" class="vp-tag vp-tag-green">
+          爬取深度: {{ task.crawl_depth }} 层
+        </span>
+        <span v-if="task.task_type === 'website'" class="vp-tag vp-tag-green">
+          最大 {{ task.max_pages }} 页
+        </span>
         <span class="text-muted" style="font-size: 13px">模型: {{ task.model }}</span>
         <span class="text-muted" style="font-size: 13px">{{ new Date(task.created_at).toLocaleTimeString('zh-CN') }}</span>
       </div>
@@ -117,7 +133,7 @@ onUnmounted(() => {
 
     <!-- Agent Timeline -->
     <div v-else>
-      <AgentTimeline :logs="typedAgentLogs" :current-step="task.current_step" />
+      <AgentTimeline :logs="typedAgentLogs" :current-step="task.current_step" :task-type="task.task_type" />
     </div>
   </div>
 </template>
@@ -136,5 +152,24 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.type-badge {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+.type-search {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.type-website {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
 }
 </style>

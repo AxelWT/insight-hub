@@ -7,6 +7,11 @@ class TaskCreate(BaseModel):
     description: str = ""
     model: str = "deepseek"
     depth: str = "standard"
+    task_type: str = "search"
+    urls: list[str] = []
+    questions: str = ""
+    crawl_depth: int = 1
+    max_pages: int = 20
 
 
 class TaskResponse(BaseModel):
@@ -15,6 +20,11 @@ class TaskResponse(BaseModel):
     description: str
     model: str
     depth: str
+    task_type: str
+    urls: list[str]
+    questions: str
+    crawl_depth: int
+    max_pages: int
     status: str
     progress: int
     current_step: str

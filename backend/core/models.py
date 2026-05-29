@@ -7,10 +7,16 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from backend.core.database import Base
 
 
+class TaskType(str, enum.Enum):
+    SEARCH = "search"
+    WEBSITE = "website"
+
+
 class TaskStatus(str, enum.Enum):
     PENDING = "pending"
     PLANNING = "planning"
     SEARCHING = "searching"
+    CRAWLING = "crawling"
     EVALUATING = "evaluating"
     WRITING = "writing"
     COMPLETED = "completed"
@@ -31,6 +37,11 @@ class ResearchTask(Base):
     description: Mapped[str] = mapped_column(Text, default="")
     model: Mapped[str] = mapped_column(String(100))
     depth: Mapped[str] = mapped_column(String(20), default="standard")
+    task_type: Mapped[str] = mapped_column(String(20), default=TaskType.SEARCH)
+    urls: Mapped[list | None] = mapped_column(JSON, default=list)
+    questions: Mapped[str | None] = mapped_column(Text, default="")
+    crawl_depth: Mapped[int] = mapped_column(Integer, default=1)
+    max_pages: Mapped[int] = mapped_column(Integer, default=20)
     status: Mapped[str] = mapped_column(String(20), default=TaskStatus.PENDING)
     progress: Mapped[int] = mapped_column(Integer, default=0)
     current_step: Mapped[str] = mapped_column(Text, default="")
@@ -39,9 +50,15 @@ class ResearchTask(Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    sources: Mapped[list["Source"]] = relationship(back_populates="task", cascade="all, delete-orphan")
-    agent_logs: Mapped[list["AgentLog"]] = relationship(back_populates="task", cascade="all, delete-orphan")
-    report: Mapped["Report | None"] = relationship(back_populates="task", uselist=False, cascade="all, delete-orphan")
+    sources: Mapped[list["Source"]] = relationship(
+        back_populates="task", cascade="all, delete-orphan"
+    )
+    agent_logs: Mapped[list["AgentLog"]] = relationship(
+        back_populates="task", cascade="all, delete-orphan"
+    )
+    report: Mapped["Report | None"] = relationship(
+        back_populates="task", uselist=False, cascade="all, delete-orphan"
+    )
 
 
 class Source(Base):

@@ -1,12 +1,20 @@
+import logging
+
 from backend.core.graph.state import ResearchState
 from backend.core.services.search import search as tavily_search
 from backend.core.config import settings
 
+logger = logging.getLogger(__name__)
+
 
 def searcher_agent(state: ResearchState) -> dict:
+    logger.info("[searcher] 节点开始: 执行搜索")
+
     query = state.get("current_query", state["topic"])
     round_num = state.get("search_rounds", 0) + 1
     existing_results = state.get("search_results", [])
+
+    logger.info(f"[searcher] 搜索关键词: {query} | 第 {round_num} 轮")
 
     existing_urls = {r.get("url") for r in existing_results}
 
@@ -28,9 +36,14 @@ def searcher_agent(state: ResearchState) -> dict:
 
     all_results = existing_results + new_results
 
+    logger.info(f"[searcher] 搜索完成: 新增 {len(new_results)} 条结果 | 总计 {len(all_results)} 条")
+
     queries = state.get("search_queries", [])
     next_query_idx = _get_next_query_index(queries, query)
     next_query = queries[next_query_idx] if next_query_idx < len(queries) else None
+
+    if next_query:
+        logger.info(f"[searcher] 下一个搜索关键词: {next_query}")
 
     log_entry = {
         "agent": "searcher",
@@ -40,6 +53,7 @@ def searcher_agent(state: ResearchState) -> dict:
         "output": [r["title"] for r in new_results[:5]],
     }
 
+    logger.info("[searcher] 节点完成: 搜索任务结束")
     return {
         "search_results": all_results,
         "search_rounds": round_num,

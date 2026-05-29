@@ -30,6 +30,11 @@ async def create_task(body: TaskCreate, db: Session = Depends(get_db)):
         description=body.description,
         model=body.model,
         depth=body.depth,
+        task_type=body.task_type,
+        urls=body.urls,
+        questions=body.questions,
+        crawl_depth=body.crawl_depth,
+        max_pages=body.max_pages,
         status="pending",
     )
     db.add(task)

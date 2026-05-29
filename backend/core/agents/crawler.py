@@ -1,10 +1,16 @@
+import logging
+
 from backend.core.graph.state import ResearchState
 from backend.core.services.search import extract as tavily_extract
 from backend.core.services.crawler import crawl_page_sync
 from backend.core.config import settings
 
+logger = logging.getLogger(__name__)
+
 
 def crawler_agent(state: ResearchState) -> dict:
+    logger.info("[crawler] 节点开始: 爬取网页内容")
+
     results = state.get("search_results", [])
     existing_content = state.get("crawled_content", [])
 
@@ -13,6 +19,7 @@ def crawler_agent(state: ResearchState) -> dict:
     to_crawl = to_crawl[: settings.max_crawl_pages]
 
     if not to_crawl:
+        logger.info("[crawler] 没有新的网页需要爬取")
         return {
             "crawled_content": existing_content,
             "current_step": "没有新的网页需要爬取",
@@ -21,6 +28,7 @@ def crawler_agent(state: ResearchState) -> dict:
         }
 
     urls = [r["url"] for r in to_crawl]
+    logger.info(f"[crawler] 待爬取 {len(urls)} 个网页")
 
     crawled = []
     failed_urls = []
@@ -57,6 +65,8 @@ def crawler_agent(state: ResearchState) -> dict:
 
     all_content = existing_content + crawled
 
+    logger.info(f"[crawler] 爬取完成: 成功 {len(crawled)} 个 | 失败 {len(failed_urls)} 个 | 总计 {len(all_content)} 个")
+
     log_entry = {
         "agent": "crawler",
         "step": "爬取网页",
@@ -65,6 +75,7 @@ def crawler_agent(state: ResearchState) -> dict:
         "output": [c["url"] for c in crawled],
     }
 
+    logger.info("[crawler] 节点完成: 网页爬取任务结束")
     return {
         "crawled_content": all_content,
         "current_step": f"已爬取 {len(all_content)} 个网页",

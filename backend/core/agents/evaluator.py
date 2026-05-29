@@ -1,14 +1,22 @@
+import logging
+
 from backend.core.graph.state import ResearchState
 from backend.core.services.ai import completion_with_system
 from backend.core.config import settings
 
+logger = logging.getLogger(__name__)
+
 
 def evaluator_agent(state: ResearchState) -> dict:
+    logger.info("[evaluator] 节点开始: 评估信息充分性")
+
     topic = state["topic"]
     results = state.get("search_results", [])
     content = state.get("crawled_content", [])
     search_rounds = state.get("search_rounds", 1)
     max_rounds = state.get("max_rounds", 3)
+
+    logger.info(f"[evaluator] 当前轮次: {search_rounds}/{max_rounds} | 搜索结果: {len(results)} 条 | 爬取内容: {len(content)} 个")
 
     content_summary = _build_content_summary(results, content)
 
@@ -47,6 +55,10 @@ def evaluator_agent(state: ResearchState) -> dict:
 
     can_continue = search_rounds < max_rounds
 
+    logger.info(f"[evaluator] 评估结果: {'充分' if is_sufficient else '不充分'} | 可继续搜索: {can_continue}")
+    if suggested:
+        logger.info(f"[evaluator] 建议关键词: {suggested}")
+
     log_entry = {
         "agent": "evaluator",
         "step": "评估信息充分性",
@@ -54,6 +66,7 @@ def evaluator_agent(state: ResearchState) -> dict:
         "output": response,
     }
 
+    logger.info("[evaluator] 节点完成: 信息评估任务结束")
     return {
         "evaluation": response,
         "is_sufficient": is_sufficient or not can_continue,

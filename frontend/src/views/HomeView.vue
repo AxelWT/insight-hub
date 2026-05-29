@@ -14,6 +14,7 @@ const statusIcons: Record<string, string> = {
   pending: '⏳',
   planning: '🤔',
   searching: '🔍',
+  crawling: '🕷️',
   evaluating: '📊',
   writing: '✍️',
   completed: '✅',
@@ -30,6 +31,7 @@ const statusTagClass: Record<string, string> = {
   pending: 'vp-tag-gray',
   planning: 'vp-tag-yellow',
   searching: 'vp-tag-brand',
+  crawling: 'vp-tag-brand',
   evaluating: 'vp-tag-yellow',
   writing: 'vp-tag-brand',
   completed: 'vp-tag-green',
@@ -40,6 +42,7 @@ const statusLabels: Record<string, string> = {
   pending: '等待中',
   planning: '规划中',
   searching: '搜索中',
+  crawling: '爬取中',
   evaluating: '评估中',
   writing: '撰写中',
   completed: '已完成',
@@ -70,7 +73,7 @@ function formatDate(dateStr: string) {
     <div class="hero-section">
       <h1>AI 调研平台</h1>
       <p class="hero-desc">
-        输入调研主题，AI Agent 将自动搜索、分析、整理，生成结构化调研报告。
+        输入调研主题或指定网站，AI Agent 将自动搜索、分析、整理，生成结构化调研报告。
       </p>
     </div>
 
@@ -85,7 +88,7 @@ function formatDate(dateStr: string) {
       <div v-else-if="taskStore.tasks.length === 0" class="empty-state">
         <div class="empty-icon">📋</div>
         <p>暂无调研记录</p>
-        <p class="text-muted" style="font-size: 13px">在左侧点击「新建调研」开始</p>
+        <p class="text-muted" style="font-size: 13px">在左侧点击「主题调研」或「网站调研」开始</p>
       </div>
 
       <div v-else class="task-grid">
@@ -107,7 +110,13 @@ function formatDate(dateStr: string) {
           </div>
 
           <div class="task-card-footer">
-            <span class="text-muted">{{ depthLabels[task.depth] || task.depth }}调研</span>
+            <div class="task-card-tags">
+              <span :class="['type-badge', task.task_type === 'website' ? 'type-website' : 'type-search']">
+                {{ task.task_type === 'website' ? '🌐 网站调研' : '🔍 主题调研' }}
+              </span>
+              <span v-if="task.task_type === 'search'" class="text-muted">{{ depthLabels[task.depth] || task.depth }}调研</span>
+              <span v-if="task.task_type === 'website'" class="text-muted">{{ task.crawl_depth }}层深度</span>
+            </div>
             <span class="text-muted">{{ formatDate(task.created_at) }}</span>
           </div>
         </div>
@@ -198,6 +207,32 @@ function formatDate(dateStr: string) {
 .task-card-footer {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   font-size: 12px;
+}
+
+.task-card-tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.type-badge {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+.type-search {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.type-website {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
 }
 </style>

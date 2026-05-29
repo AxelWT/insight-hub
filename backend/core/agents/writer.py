@@ -1,12 +1,20 @@
+import logging
+
 from backend.core.graph.state import ResearchState
 from backend.core.services.ai import completion_with_system
 
+logger = logging.getLogger(__name__)
+
 
 def writer_agent(state: ResearchState) -> dict:
+    logger.info("[writer] 节点开始: 撰写调研报告")
+
     topic = state["topic"]
     description = state.get("description", "")
     results = state.get("search_results", [])
     content = state.get("crawled_content", [])
+
+    logger.info(f"[writer] 调研主题: {topic} | 搜索结果: {len(results)} 条 | 爬取内容: {len(content)} 个")
 
     materials = _build_materials(results, content)
 
@@ -14,7 +22,9 @@ def writer_agent(state: ResearchState) -> dict:
         report = _generate_report(
             topic, description, materials, state.get("model", "openai/gpt-4o")
         )
-    except Exception:
+        logger.info(f"[writer] 报告生成成功: {len(report)} 字符")
+    except Exception as e:
+        logger.warning(f"[writer] 报告生成失败，使用备用方案: {e}")
         report = _generate_fallback_report(topic, results, content)
 
     log_entry = {
@@ -24,6 +34,7 @@ def writer_agent(state: ResearchState) -> dict:
         "output": f"报告字数: {len(report)}",
     }
 
+    logger.info("[writer] 节点完成: 报告撰写任务结束")
     return {
         "report": report,
         "current_step": "报告撰写完成",

@@ -1,11 +1,19 @@
+import logging
+
 from backend.core.graph.state import ResearchState
 from backend.core.services.ai import completion_with_system
 
+logger = logging.getLogger(__name__)
+
 
 def supervisor_agent(state: ResearchState) -> dict:
+    logger.info("[supervisor] 节点开始: 规划搜索策略")
+
     topic = state["topic"]
     description = state.get("description", "")
     depth = state.get("depth", "standard")
+
+    logger.info(f"[supervisor] 调研主题: {topic} | 深度: {depth}")
 
     depth_guide = {
         "quick": "生成 2-3 个搜索关键词，聚焦最核心的方面",
@@ -50,6 +58,8 @@ def supervisor_agent(state: ResearchState) -> dict:
         if q.strip() and not q.strip().startswith("#")
     ]
 
+    logger.info(f"[supervisor] 生成 {len(queries)} 个搜索关键词: {queries}")
+
     log_entry = {
         "agent": "supervisor",
         "step": "规划搜索策略",
@@ -58,6 +68,7 @@ def supervisor_agent(state: ResearchState) -> dict:
         "output": queries,
     }
 
+    logger.info("[supervisor] 节点完成: 搜索策略规划成功")
     return {
         "search_queries": queries,
         "current_query": queries[0] if queries else topic,
