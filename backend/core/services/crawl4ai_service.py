@@ -41,12 +41,12 @@ async def crawl_url(url: str, max_retries: int = MAX_RETRIES) -> dict:
     run_config = CrawlerRunConfig(
         word_count_threshold=10,
         excluded_tags=["nav", "footer", "header", "aside"],
-        timeout=30,
+        page_timeout=30000,  # 30秒超时（单位：毫秒）
         # 只爬取同域名的链接，排除外部链接
         exclude_external_links=True,
         # 排除社交媒体链接
         exclude_social_media_links=True,
-        # 排除邮箱链接
+        # 排除外部图片
         exclude_external_images=True,
     )
 
@@ -184,29 +184,21 @@ def crawl_urls_sync(
     max_retries: int = MAX_RETRIES,
 ) -> list[dict]:
     """同步版本的爬取函数"""
-    try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            import concurrent.futures
+    import concurrent.futures
 
-            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-                if max_depth > 0:
-                    future = executor.submit(
-                        asyncio.run,
-                        crawl_urls_recursive(urls, max_depth, max_pages, max_retries),
-                    )
-                else:
-                    future = executor.submit(asyncio.run, crawl_urls(urls, max_retries))
-                return future.result()
-        else:
-            if max_depth > 0:
-                return loop.run_until_complete(
-                    crawl_urls_recursive(urls, max_depth, max_pages, max_retries)
-                )
-            else:
-                return loop.run_until_complete(crawl_urls(urls, max_retries))
-    except RuntimeError:
+    def _run_in_thread():
         if max_depth > 0:
             return asyncio.run(crawl_urls_recursive(urls, max_depth, max_pages, max_retries))
         else:
             return asyncio.run(crawl_urls(urls, max_retries))
+
+    try:
+        # 检查是否在事件循环中
+        loop = asyncio.get_running_loop()
+        # 如果在事件循环中，使用线程池执行
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(_run_in_thread)
+            return future.result()
+    except RuntimeError:
+        # 没有运行中的事件循环，直接执行
+        return _run_in_thread()
