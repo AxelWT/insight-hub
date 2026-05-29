@@ -29,10 +29,13 @@ const agentIcons: Record<string, string> = {
   crawler: '🕷️',
   evaluator: '📊',
   writer: '✍️',
+  website_crawler: '🕷️',
+  website_writer: '✍️',
 }
 
-onMounted(async () => {
+async function fetchData() {
   const id = Number(route.params.id)
+  loading.value = true
   try {
     task.value = await getTask(id)
     report.value = await getReport(id)
@@ -45,6 +48,18 @@ onMounted(async () => {
   }
   await nextTick()
   setupScrollSpy()
+}
+
+onMounted(() => {
+  fetchData()
+})
+
+// 监听路由参数变化，重新加载数据
+watch(() => route.params.id, (newId, oldId) => {
+  if (newId && newId !== oldId) {
+    activeTab.value = 'report'
+    fetchData()
+  }
 })
 
 function slugify(text: string): string {

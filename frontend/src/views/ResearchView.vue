@@ -41,13 +41,27 @@ function connectWs() {
   wsStore.connect(id)
 }
 
-onMounted(() => {
+function initTask() {
+  loading.value = true
   fetchTask()
   connectWs()
+}
+
+onMounted(() => {
+  initTask()
 })
 
 onUnmounted(() => {
   wsStore.disconnect()
+  if (pollTimer) clearInterval(pollTimer)
+})
+
+// 监听路由参数变化，重新加载数据
+watch(() => route.params.id, (newId, oldId) => {
+  if (newId && newId !== oldId) {
+    wsStore.disconnect()
+    initTask()
+  }
 })
 
 watch(() => wsStore.lastMessage, (msg) => {
@@ -67,9 +81,6 @@ watch(() => wsStore.lastMessage, (msg) => {
 let pollTimer: ReturnType<typeof setInterval> | null = null
 onMounted(() => {
   pollTimer = setInterval(fetchTask, 5000)
-})
-onUnmounted(() => {
-  if (pollTimer) clearInterval(pollTimer)
 })
 </script>
 
