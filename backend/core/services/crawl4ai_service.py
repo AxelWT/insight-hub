@@ -78,7 +78,14 @@ async def crawl_url(url: str, max_retries: int = MAX_RETRIES) -> dict:
                     internal_links = []
                     if hasattr(result, 'links') and result.links:
                         for link in result.links:
-                            href = link.get("href", "")
+                            # 处理不同的链接格式
+                            if isinstance(link, dict):
+                                href = link.get("href", "")
+                            elif isinstance(link, str):
+                                href = link
+                            else:
+                                continue
+
                             if href:
                                 full_url = urljoin(url, href)
                                 normalized = _normalize_url(full_url)
