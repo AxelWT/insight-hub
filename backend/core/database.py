@@ -3,7 +3,11 @@ from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
 from backend.core.config import settings
 
-engine = create_engine(settings.database_url, echo=False)
+engine = create_engine(
+    settings.database_url,
+    echo=False,
+    connect_args={"check_same_thread": False},  # SQLite 需要此参数
+)
 SessionLocal = sessionmaker(bind=engine)
 
 

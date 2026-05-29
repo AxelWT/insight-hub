@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useTaskStore } from '../stores/task'
 import { getModels } from '../api/report'
 import type { TaskCreateParams } from '../api/task'
+import { ElMessageBox } from 'element-plus'
 
 const router = useRouter()
 const taskStore = useTaskStore()
@@ -25,7 +26,7 @@ const depthOptions = [
   { value: 'deep', label: '深度（3-5轮搜索）' },
 ]
 
-onMounted(async () => {
+async function loadData() {
   await taskStore.fetchTasks()
   try {
     const res = await getModels()
@@ -33,6 +34,10 @@ onMounted(async () => {
   } catch {
     models.value = [{ id: 'deepseek', name: 'DeepSeek' }]
   }
+}
+
+onMounted(() => {
+  loadData()
 })
 
 async function handleSubmit() {
@@ -76,13 +81,26 @@ const depthLabels: Record<string, string> = {
 function truncate(text: string, len: number) {
   return text.length > len ? text.slice(0, len) + '...' : text
 }
+
+async function handleDelete(task: { id: number; topic: string }, event: Event) {
+  event.stopPropagation()
+  try {
+    await ElMessageBox.confirm(
+      `确定删除「${truncate(task.topic, 20)}」？`,
+      '删除确认',
+      { confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning' }
+    )
+    await taskStore.removeTask(task.id)
+  } catch {
+    // 用户取消
+  }
+}
 </script>
 
 <template>
   <div class="sidebar-inner">
     <!-- Brand -->
     <div class="sidebar-brand">
-      <span class="sidebar-brand-icon">🔬</span>
       <span>AI 调研平台</span>
     </div>
 
@@ -162,14 +180,23 @@ function truncate(text: string, len: number) {
           :data-status="task.status"
           @click="goToTask(task)"
         >
-          <div class="task-title">
-            {{ statusIcons[task.status] || '' }} {{ truncate(task.topic, 28) }}
+          <div class="task-content">
+            <div class="task-title">
+              {{ statusIcons[task.status] || '' }} {{ truncate(task.topic, 28) }}
+            </div>
+            <div class="task-meta">
+              {{ depthLabels[task.depth] || task.depth }}
+              &middot;
+              {{ new Date(task.created_at).toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) }}
+            </div>
           </div>
-          <div class="task-meta">
-            {{ depthLabels[task.depth] || task.depth }}
-            &middot;
-            {{ new Date(task.created_at).toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) }}
-          </div>
+          <button
+            class="task-delete-btn"
+            title="删除"
+            @click="handleDelete(task, $event)"
+          >
+            &times;
+          </button>
         </div>
       </div>
     </div>
@@ -188,5 +215,42 @@ function truncate(text: string, len: number) {
   border: 1px solid var(--vp-c-divider);
   border-radius: var(--vp-radius);
   padding: 16px;
+}
+
+.sidebar-task-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.task-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.task-delete-btn {
+  display: none;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: var(--vp-c-text-3);
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 0;
+  line-height: 1;
+}
+
+.task-delete-btn:hover {
+  color: var(--vp-c-red);
+  background: var(--vp-c-bg-mute);
+}
+
+.sidebar-task-item:hover .task-delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

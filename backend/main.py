@@ -1,5 +1,6 @@
 import asyncio
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,6 +15,7 @@ from backend.api.websocket import router as ws_router, broadcast
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    Path("./data").mkdir(exist_ok=True)
     init_db()
     set_broadcaster(broadcast)
     yield

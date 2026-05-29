@@ -9,7 +9,7 @@
 - **工作流引擎**: LangGraph
 - **LLM 框架**: LangChain + LiteLLM
 - **搜索 API**: Tavily
-- **数据库**: SQLite + SQLAlchemy
+- **数据库**: MySQL + SQLAlchemy
 
 ## 项目结构
 
@@ -38,13 +38,41 @@ insight-hub/
 
 ## 快速开始
 
-### 1. 安装后端依赖
+### 1. 安装 MySQL 数据库
+
+**macOS（使用 Homebrew）**:
+```bash
+# 安装 MySQL
+brew install mysql
+
+# 启动 MySQL 服务
+brew services start mysql
+
+# 安全设置（设置 root 密码等）
+mysql_secure_installation
+```
+
+**创建数据库**:
+```bash
+# 登录 MySQL
+mysql -u root -p
+
+# 创建数据库
+CREATE DATABASE insight_hub CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+# 创建用户（可选，也可以使用 root）
+CREATE USER 'insight_user'@'localhost' IDENTIFIED BY 'your_password';
+GRANT ALL PRIVILEGES ON insight_hub.* TO 'insight_user'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+### 2. 安装后端依赖
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. 配置环境变量
+### 3. 配置环境变量
 
 ```bash
 cp .env.example .env
@@ -53,8 +81,9 @@ cp .env.example .env
 需要配置的 Key：
 - `TAVILY_API_KEY` - Tavily 搜索 API (必需)
 - `DEEPSEEK_API_KEY` / `CUSTOM_API_KEY` - 至少一个 LLM API Key
+- `DATABASE_URL` - MySQL 连接字符串（格式：`mysql+pymysql://user:password@localhost:3306/insight_hub`）
 
-### 3. 启动后端
+### 4. 启动后端
 
 ```bash
 uvicorn backend.main:app --reload --port 8000
@@ -62,7 +91,7 @@ uvicorn backend.main:app --reload --port 8000
 
 API 文档访问 http://localhost:8000/docs
 
-### 4. 启动前端
+### 5. 启动前端
 
 ```bash
 cd frontend

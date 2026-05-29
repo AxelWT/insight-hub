@@ -1,7 +1,8 @@
 import asyncio
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException
 from sqlalchemy.orm import Session
+from fastapi import Depends
 
 from backend.core.database import get_db
 from backend.core.models import ResearchTask

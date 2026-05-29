@@ -69,6 +69,11 @@ function extractToc(content: string): { title: string; level: number; slug: stri
 }
 
 function addHeadingIds(html: string): string {
+  // 将来源引用转换为可点击链接
+  html = html.replace(
+    /(\[来源\d+\]\s*.*?\s*-\s*)(https?:\/\/[^\s<]+)/g,
+    '$1<a href="$2" target="_blank" rel="noopener">$2</a>'
+  )
   return html.replace(/<h([1-4])([^>]*)>([\s\S]*?)<\/h\1>/g, (match, level, attrs, content) => {
     if (/id=/.test(attrs)) return match
     const text = content.replace(/<[^>]+>/g, '')
@@ -152,7 +157,12 @@ async function copyToClipboard() {
   <div v-else-if="task">
     <!-- Header -->
     <div class="report-header">
-      <button class="vp-btn vp-btn-text" @click="router.push('/')">&larr; 返回</button>
+      <div class="report-breadcrumb">
+        <span class="breadcrumb-item" @click="router.push('/')">首页</span>
+        <span class="breadcrumb-separator">/</span>
+        <span class="breadcrumb-item current">{{ task.topic }}</span>
+      </div>
+
       <h1>{{ task.topic }}</h1>
 
       <div class="vp-stat-row">
@@ -285,15 +295,60 @@ async function copyToClipboard() {
   margin-bottom: 8px;
 }
 
+.report-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--vp-c-text-3);
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--vp-c-divider-light);
+  margin-bottom: 16px;
+}
+
+.breadcrumb-item {
+  cursor: pointer;
+  transition: color var(--vp-transition);
+}
+
+.breadcrumb-item:hover {
+  color: var(--vp-c-brand);
+}
+
+.breadcrumb-item.current {
+  color: var(--vp-c-text-2);
+  cursor: default;
+}
+
+.breadcrumb-item.current:hover {
+  color: var(--vp-c-text-2);
+}
+
+.breadcrumb-separator {
+  color: var(--vp-c-divider);
+}
+
 .report-header h1 {
-  font-size: 28px;
-  margin: 8px 0 4px;
+  font-size: 22px;
+  margin: 0 0 16px;
+}
+
+.report-header .vp-stat-row {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--vp-c-divider-light);
+  margin-bottom: 24px;
 }
 
 .report-layout {
   display: grid;
   grid-template-columns: 1fr 200px;
   gap: 32px;
+}
+
+.report-body {
+  min-width: 0;
+  overflow: hidden;
 }
 
 .report-toc {
@@ -340,6 +395,7 @@ async function copyToClipboard() {
 .source-card {
   margin-bottom: 12px;
   padding: 16px 20px;
+  overflow: hidden;
 }
 
 .source-header {
@@ -389,9 +445,15 @@ async function copyToClipboard() {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 70%;
+  cursor: pointer;
 }
 
 .source-url:hover {
   color: var(--vp-c-brand);
+  text-decoration: underline;
+}
+
+.source-title {
+  cursor: pointer;
 }
 </style>
