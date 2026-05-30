@@ -62,15 +62,15 @@ cp .env.example .env
 git clone <repository-url>
 cd insight-hub
 
-# 2. 运行安装脚本（会自动创建 .env）
-./setup.sh
-
-# 3. 编辑 .env，填写 API Key
-vim .env
-
-# 4. 一键启动前后端
+# 2. 一键启动（自动检测并安装依赖）
 ./start.sh
 ```
+
+首次运行会自动：
+- 创建 `.env` 配置文件
+- 安装后端 Python 依赖
+- 安装 Playwright 浏览器
+- 安装前端 npm 依赖
 
 #### 手动启动（分开启动）
 
@@ -144,8 +144,7 @@ insight-hub/
 │   └── Dockerfile         # 后端 Docker 镜像
 │
 ├── docker-compose.yml     # Docker 编排配置
-├── setup.sh               # 安装脚本
-├── start.sh               # 终端启动脚本
+├── start.sh               # 终端启动脚本（自动安装依赖）
 └── docker-start.sh        # Docker 启动脚本
 ```
 
