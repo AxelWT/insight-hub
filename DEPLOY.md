@@ -1,5 +1,16 @@
 # 部署指南
 
+## 架构说明
+
+```
+用户 → Nginx Proxy Manager → Python (端口 8000)
+                                    ├── /        → 前端页面
+                                    ├── /api/*   → 后端 API
+                                    └── /ws/*    → WebSocket
+```
+
+**访问地址**：`http://your-server-ip:8000`
+
 ## 部署方式
 
 ### 方式一：GitHub Actions 自动部署（推荐）
@@ -111,19 +122,19 @@ docker compose up -d --build
 
 ## 端口配置
 
-需要开放以下端口：
+只需要开放一个端口：
 
 ```bash
 # 防火墙配置（Ubuntu/Debian）
-ufw allow 80/tcp    # 前端
-ufw allow 8000/tcp  # 后端 API
+ufw allow 8000/tcp  # 应用（前端+后端）
 ufw allow 22/tcp    # SSH
 
 # 防火墙配置（CentOS）
-firewall-cmd --permanent --add-port=80/tcp
 firewall-cmd --permanent --add-port=8000/tcp
 firewall-cmd --reload
 ```
+
+**注意**：如果你使用 Nginx Proxy Manager，只需要在 NPM 中配置代理到 `http://server-ip:8000` 即可。
 
 ## 域名配置（可选）
 
