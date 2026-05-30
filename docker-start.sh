@@ -42,12 +42,12 @@ check_docker() {
 
 # 检查环境配置
 check_env() {
-    if [ ! -f "backend/.env" ]; then
-        echo -e "${YELLOW}⚠️  未找到 backend/.env 配置文件${NC}"
+    if [ ! -f ".env" ]; then
+        echo -e "${YELLOW}⚠️  未找到 .env 配置文件${NC}"
         echo -e "${YELLOW}   请复制 .env.example 并填写 API Key${NC}"
         echo ""
-        echo "   cp .env.example backend/.env"
-        echo "   vim backend/.env"
+        echo "   cp .env.example .env"
+        echo "   vim .env"
         exit 1
     fi
     echo -e "${GREEN}✓ 环境配置检查通过${NC}"

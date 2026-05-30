@@ -10,6 +10,12 @@ echo "========================"
 python_version=$(python3 --version 2>&1 | awk '{print $2}')
 echo "✓ Python 版本: $python_version"
 
+# 复制环境配置（在根目录）
+if [ ! -f .env ]; then
+    cp .env.example .env
+    echo "✓ 已创建 .env 配置文件，请填写 API Key"
+fi
+
 # 安装后端依赖
 echo ""
 echo "📦 安装后端依赖..."
@@ -23,12 +29,6 @@ playwright install chromium --with-deps
 # 创建必要目录
 echo "📁 创建数据目录..."
 mkdir -p data reports logs
-
-# 复制环境配置
-if [ ! -f .env ]; then
-    cp ../.env.example .env
-    echo "✓ 已创建 .env 配置文件"
-fi
 
 cd ..
 

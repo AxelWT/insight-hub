@@ -45,8 +45,8 @@ check_dependencies() {
     fi
 
     # 检查环境配置
-    if [ ! -f "backend/.env" ]; then
-        echo -e "${YELLOW}⚠️  未找到 backend/.env 配置文件${NC}"
+    if [ ! -f ".env" ]; then
+        echo -e "${YELLOW}⚠️  未找到 .env 配置文件${NC}"
         echo -e "${YELLOW}   请复制 .env.example 并填写 API Key${NC}"
         exit 1
     fi

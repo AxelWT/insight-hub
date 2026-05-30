@@ -3,17 +3,16 @@ version: '3.8'
 services:
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: insight-hub-backend
     ports:
       - "8000:8000"
     volumes:
-      - ./backend/data:/app/data       # 持久化数据库
-      - ./backend/reports:/app/reports  # 持久化报告
-      - ./backend/.env:/app/.env:ro     # 挂载配置文件（只读）
+      - ./backend/data:/app/backend/data       # 持久化数据库
+      - ./backend/reports:/app/backend/reports  # 持久化报告
     env_file:
-      - ./backend/.env
+      - .env                                   # 从根目录读取 .env
     environment:
       - TZ=Asia/Shanghai
     restart: unless-stopped

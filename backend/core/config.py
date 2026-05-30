@@ -1,5 +1,9 @@
 from pydantic_settings import BaseSettings
 from pathlib import Path
+import os
+
+# 获取项目根目录（backend 的上级目录）
+ROOT_DIR = Path(__file__).parent.parent.parent
 
 
 class Settings(BaseSettings):
@@ -58,7 +62,10 @@ class Settings(BaseSettings):
             "deep": self.deep_max_rounds,
         }.get(depth, self.standard_max_rounds)
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    model_config = {
+        "env_file": str(ROOT_DIR / ".env"),  # 从项目根目录读取 .env
+        "env_file_encoding": "utf-8",
+    }
 
 
 settings = Settings()

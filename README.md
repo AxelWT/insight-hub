@@ -28,8 +28,8 @@ git clone <repository-url>
 cd insight-hub
 
 # 2. 配置环境变量
-cp .env.example backend/.env
-# 编辑 backend/.env，填写 API Key
+cp .env.example .env
+# 编辑 .env，填写 API Key
 
 # 3. 一键启动
 ./docker-start.sh
@@ -62,12 +62,11 @@ cp .env.example backend/.env
 git clone <repository-url>
 cd insight-hub
 
-# 2. 运行安装脚本
+# 2. 运行安装脚本（会自动创建 .env）
 ./setup.sh
 
-# 3. 配置环境变量
-cp .env.example backend/.env
-# 编辑 backend/.env，填写 API Key
+# 3. 编辑 .env，填写 API Key
+vim .env
 
 # 4. 一键启动前后端
 ./start.sh
@@ -89,7 +88,14 @@ npm run dev
 
 ## 🔧 环境配置
 
-复制 `.env.example` 为 `backend/.env`，填写以下配置：
+复制项目根目录的 `.env.example` 为 `.env`，填写以下配置：
+
+```bash
+cp .env.example .env
+vim .env  # 编辑配置文件
+```
+
+需要配置的内容：
 
 ```bash
 # 必需配置

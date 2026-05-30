@@ -5,20 +5,26 @@ WORKDIR /app
 # 安装系统依赖
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # 安装 Playwright 依赖（crawl4ai 需要）
 RUN pip install playwright && playwright install --with-deps chromium
 
 # 复制依赖文件并安装
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY backend/requirements.txt backend/
+RUN pip install --no-cache-dir -r backend/requirements.txt
 
 # 复制应用代码
-COPY . .
+COPY .env.example .
+COPY backend/ backend/
+COPY .env* ./
 
 # 创建数据目录
-RUN mkdir -p data reports
+RUN mkdir -p backend/data backend/reports backend/logs
+
+# 设置工作目录到 backend
+WORKDIR /app/backend
 
 # 暴露端口
 EXPOSE 8000
