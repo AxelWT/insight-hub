@@ -1,6 +1,5 @@
 from pydantic_settings import BaseSettings
 from pathlib import Path
-import os
 
 # 获取项目根目录（backend 的上级目录）
 ROOT_DIR = Path(__file__).parent.parent.parent
