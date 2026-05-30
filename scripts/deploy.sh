@@ -47,17 +47,16 @@ docker compose ps
 
 # 检查健康状态
 echo ""
-if curl -s http://localhost:8000/health > /dev/null 2>&1; then
-    echo -e "${GREEN}✅ 后端服务正常${NC}"
+if curl -s http://localhost:8002/health > /dev/null 2>&1; then
+    echo -e "${GREEN}✅ 服务正常${NC}"
 else
-    echo -e "${RED}⚠️  后端服务可能还在启动中${NC}"
+    echo -e "${RED}⚠️  服务可能还在启动中${NC}"
 fi
 
 echo ""
 echo -e "${GREEN}╔══════════════════════════════════════════╗${NC}"
 echo -e "${GREEN}║           ✅ 部署完成！                  ║${NC}"
 echo -e "${GREEN}╠══════════════════════════════════════════╣${NC}"
-echo -e "${GREEN}║  前端: http://your-server-ip             ║${NC}"
-echo -e "${GREEN}║  后端: http://your-server-ip:8000        ║${NC}"
-echo -e "${GREEN}║  文档: http://your-server-ip:8000/docs   ║${NC}"
+echo -e "${GREEN}║  应用: http://your-server-ip:8002        ║${NC}"
+echo -e "${GREEN}║  文档: http://your-server-ip:8002/docs   ║${NC}"
 echo -e "${GREEN}╚══════════════════════════════════════════╝${NC}"

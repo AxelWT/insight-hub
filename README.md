@@ -154,12 +154,21 @@ insight-hub/
 
 ## 🌐 访问地址
 
+### 终端启动（开发模式）
+
 | 服务 | 地址 | 说明 |
 |------|------|------|
-| 前端界面 | http://localhost:5173 (终端) / http://localhost:80 (Docker) | Vue 前端 |
+| 前端界面 | http://localhost:5173 | Vue 前端 |
 | 后端 API | http://localhost:8000 | FastAPI 后端 |
 | API 文档 | http://localhost:8000/docs | Swagger UI |
-| 健康检查 | http://localhost:8000/health | 服务状态 |
+
+### Docker 启动（生产模式）
+
+| 服务 | 地址 | 说明 |
+|------|------|------|
+| 应用 | http://localhost:8002 | 前端 + 后端 |
+| API 文档 | http://localhost:8002/docs | Swagger UI |
+| 健康检查 | http://localhost:8002/health | 服务状态 |
 
 ---
 
