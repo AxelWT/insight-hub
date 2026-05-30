@@ -132,11 +132,6 @@ const depthLabels: Record<string, string> = {
   deep: '深度',
 }
 
-const typeLabels: Record<string, string> = {
-  search: '🔍 主题调研',
-  website: '🌐 网站调研',
-}
-
 function truncate(text: string, len: number) {
   return text.length > len ? text.slice(0, len) + '...' : text
 }

@@ -10,17 +10,6 @@ onMounted(() => {
   taskStore.fetchTasks()
 })
 
-const statusIcons: Record<string, string> = {
-  pending: '⏳',
-  planning: '🤔',
-  searching: '🔍',
-  crawling: '🕷️',
-  evaluating: '📊',
-  writing: '✍️',
-  completed: '✅',
-  failed: '❌',
-}
-
 const depthLabels: Record<string, string> = {
   quick: '快速',
   standard: '标准',
