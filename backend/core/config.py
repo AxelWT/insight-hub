@@ -31,18 +31,6 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./data/insight_hub.db"
     report_output_dir: str = "./reports"
 
-    # JWT 配置
-    secret_key: str = "your-secret-key-change-in-production"
-    algorithm: str = "HS256"
-    access_token_expire_minutes: int = 30
-
-    # SMTP 邮件配置
-    smtp_host: str = "smtp.qq.com"
-    smtp_port: int = 465
-    smtp_user: str = ""
-    smtp_pass: str = ""
-    smtp_from: str = ""
-
     @property
     def available_models(self) -> list[dict]:
         models = []
