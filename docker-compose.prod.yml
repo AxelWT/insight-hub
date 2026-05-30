@@ -1,0 +1,19 @@
+services:
+  app:
+    image: ${ACR_REGISTRY}/${ACR_NAMESPACE}/insight-hub:latest
+    container_name: insight-hub
+    ports:
+      - "8002:8000"
+    volumes:
+      - ./backend/data:/app/backend/data
+      - ./backend/reports:/app/backend/reports
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Shanghai
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

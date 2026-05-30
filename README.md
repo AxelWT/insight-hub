@@ -244,6 +244,12 @@ alembic history
 ### 架构说明
 
 ```
+GitHub Actions
+    ├── 构建 Docker 镜像
+    └── 推送到阿里云 ACR
+            ↓
+服务器拉取镜像并启动
+            ↓
 用户 → Nginx Proxy Manager → Python (端口 8002)
                                     ├── /        → 前端页面
                                     ├── /api/*   → 后端 API
@@ -252,9 +258,15 @@ alembic history
 
 ### 方式一：GitHub Actions 自动部署（推荐）
 
-代码推送到 `main` 分支时自动部署到服务器。
+代码推送到 `main` 分支时自动构建镜像并部署到服务器。
 
-#### 1. 服务器初始化
+#### 1. 配置阿里云 ACR 镜像仓库
+
+1. 登录 [阿里云容器镜像服务](https://cr.console.aliyun.com/)
+2. 创建命名空间和镜像仓库
+3. 获取登录凭证
+
+#### 2. 服务器初始化
 
 ```bash
 # SSH 登录服务器
@@ -265,31 +277,34 @@ curl -fsSL https://get.docker.com | sh
 
 # 创建项目目录
 mkdir -p /opt/insight-hub
-cd /opt/insight-hub
-git clone https://github.com/YOUR_USERNAME/insight-hub.git .
-cp .env.example .env
-vim .env  # 填写 API Key
-
-# 首次启动
-docker compose up -d --build
 ```
 
-#### 2. 配置 GitHub Secrets
+#### 3. 配置 GitHub Secrets
 
 在 GitHub 仓库页面：**Settings → Secrets and variables → Actions**
 
 添加以下 Secrets：
 
-| 名称 | 值 |
-|------|-----|
-| `SERVER_HOST` | 服务器 IP 地址 |
-| `SERVER_USER` | SSH 用户名（如 `root`） |
-| `SERVER_SSH_KEY` | SSH 私钥完整内容 |
+| 分类 | Secret 名称 | 说明 |
+|------|-------------|------|
+| **阿里云 ACR** | `ACR_REGISTRY` | 镜像仓库地址（如 `registry.cn-hangzhou.aliyuncs.com`） |
+| | `ACR_NAMESPACE` | 命名空间 |
+| | `ACR_USERNAME` | 登录用户名 |
+| | `ACR_PASSWORD` | 登录密码 |
+| **服务器** | `ECS_HOST` | 服务器 IP 地址 |
+| | `ECS_USERNAME` | SSH 用户名（如 `root`） |
+| | `ECS_SSH_KEY` | SSH 私钥完整内容 |
+| **应用配置** | `TAVILY_API_KEY` | Tavily 搜索 API Key |
+| | `DEEPSEEK_API_KEY` | DeepSeek API Key |
+| | `CUSTOM_BASE_URL` | 自定义模型 API 地址（可选） |
+| | `CUSTOM_API_KEY` | 自定义模型 API Key（可选） |
+| | `CUSTOM_MODEL_NAME` | 自定义模型名称（可选） |
+| | `DATABASE_URL` | 数据库连接字符串 |
 
-#### 3. 自动部署
+#### 4. 自动部署
 
 ```bash
-git push origin main  # 自动触发部署
+git push origin main  # 自动触发构建和部署
 ```
 
 ---
