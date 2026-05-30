@@ -1,5 +1,6 @@
 services:
   app:
+    image: ${IMAGE_NAME:-insight-hub:local}
     build:
       context: .
       dockerfile: backend/Dockerfile
