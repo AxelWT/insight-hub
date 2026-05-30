@@ -1,16 +1,16 @@
 services:
-  backend:
+  app:
     build:
       context: .
       dockerfile: backend/Dockerfile
-    container_name: insight-hub-backend
+    container_name: insight-hub
     ports:
       - "8000:8000"
     volumes:
-      - ./backend/data:/app/backend/data       # 持久化数据库
-      - ./backend/reports:/app/backend/reports  # 持久化报告
+      - ./backend/data:/app/backend/data
+      - ./backend/reports:/app/backend/reports
     env_file:
-      - .env                                   # 从根目录读取 .env
+      - .env
     environment:
       - TZ=Asia/Shanghai
     restart: unless-stopped
@@ -19,14 +19,3 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: insight-hub-frontend
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
-    restart: unless-stopped
