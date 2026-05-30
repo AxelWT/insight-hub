@@ -1,8 +1,8 @@
 import logging
 
-from backend.core.graph.state import ResearchState
-from backend.core.services.search import search as tavily_search
-from backend.core.config import settings
+from core.graph.state import ResearchState
+from core.services.search import search as tavily_search
+from core.config import settings
 
 logger = logging.getLogger(__name__)
 

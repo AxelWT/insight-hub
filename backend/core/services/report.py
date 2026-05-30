@@ -3,8 +3,8 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session
 
-from backend.core.config import settings
-from backend.core.models import ResearchTask, Report, Source, AgentLog
+from core.config import settings
+from core.models import ResearchTask, Report, Source, AgentLog
 
 
 def save_sources(

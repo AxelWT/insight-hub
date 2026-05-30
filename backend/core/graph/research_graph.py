@@ -2,13 +2,13 @@ from typing import Literal
 
 from langgraph.graph import StateGraph, START, END
 
-from backend.core.graph.state import ResearchState
-from backend.core.agents.supervisor import supervisor_agent
-from backend.core.agents.searcher import searcher_agent
-from backend.core.agents.crawler import crawler_agent
-from backend.core.agents.evaluator import evaluator_agent
-from backend.core.agents.writer import writer_agent
-from backend.core.config import settings
+from core.graph.state import ResearchState
+from core.agents.supervisor import supervisor_agent
+from core.agents.searcher import searcher_agent
+from core.agents.crawler import crawler_agent
+from core.agents.evaluator import evaluator_agent
+from core.agents.writer import writer_agent
+from core.config import settings
 
 
 def route_after_evaluation(state: ResearchState) -> Literal["searcher", "writer"]:

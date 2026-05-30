@@ -1,8 +1,8 @@
 from langgraph.graph import StateGraph, START, END
 
-from backend.core.graph.state import WebsiteResearchState
-from backend.core.agents.website_crawler import website_crawler_agent
-from backend.core.agents.website_writer import website_writer_agent
+from core.graph.state import WebsiteResearchState
+from core.agents.website_crawler import website_crawler_agent
+from core.agents.website_writer import website_writer_agent
 
 
 def build_website_research_graph() -> StateGraph:

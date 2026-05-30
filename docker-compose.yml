@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: insight-hub-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/data:/app/data       # 持久化数据库
+      - ./backend/reports:/app/reports  # 持久化报告
+      - ./backend/.env:/app/.env:ro     # 挂载配置文件（只读）
+    env_file:
+      - ./backend/.env
+    environment:
+      - TZ=Asia/Shanghai
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: insight-hub-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped

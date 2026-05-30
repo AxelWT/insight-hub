@@ -1,7 +1,7 @@
 import logging
 
-from backend.core.graph.state import WebsiteResearchState
-from backend.core.services.crawl4ai_service import crawl_urls_sync
+from core.graph.state import WebsiteResearchState
+from core.services.crawl4ai_service import crawl_urls_sync
 
 logger = logging.getLogger(__name__)
 

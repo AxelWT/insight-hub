@@ -1,7 +1,7 @@
 import logging
 
-from backend.core.graph.state import WebsiteResearchState
-from backend.core.services.ai import completion_with_system
+from core.graph.state import WebsiteResearchState
+from core.services.ai import completion_with_system
 
 logger = logging.getLogger(__name__)
 

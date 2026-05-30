@@ -4,10 +4,10 @@ from fastapi import APIRouter, HTTPException
 from sqlalchemy.orm import Session
 from fastapi import Depends
 
-from backend.core.database import get_db
-from backend.core.models import ResearchTask
-from backend.core.runner import start_research
-from backend.schemas.task import TaskCreate, TaskResponse, TaskListResponse
+from core.database import get_db
+from core.models import ResearchTask
+from core.runner import start_research
+from schemas.task import TaskCreate, TaskResponse, TaskListResponse
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 

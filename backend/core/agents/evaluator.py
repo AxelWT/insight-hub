@@ -1,8 +1,8 @@
 import logging
 
-from backend.core.graph.state import ResearchState
-from backend.core.services.ai import completion_with_system
-from backend.core.config import settings
+from core.graph.state import ResearchState
+from core.services.ai import completion_with_system
+from core.config import settings
 
 logger = logging.getLogger(__name__)
 

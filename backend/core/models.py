@@ -4,7 +4,7 @@ from datetime import datetime
 from sqlalchemy import String, Text, Integer, Float, DateTime, Enum, JSON, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from backend.core.database import Base
+from core.database import Base
 
 
 class TaskType(str, enum.Enum):

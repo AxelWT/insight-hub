@@ -1,9 +1,9 @@
 import logging
 
-from backend.core.graph.state import ResearchState
-from backend.core.services.search import extract as tavily_extract
-from backend.core.services.crawler import crawl_page_sync
-from backend.core.config import settings
+from core.graph.state import ResearchState
+from core.services.search import extract as tavily_extract
+from core.services.crawler import crawl_page_sync
+from core.config import settings
 
 logger = logging.getLogger(__name__)
 

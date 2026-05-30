@@ -2,10 +2,10 @@ import asyncio
 import logging
 from datetime import datetime
 
-from backend.core.database import SessionLocal
-from backend.core.models import ResearchTask, TaskType
-from backend.core.config import settings
-from backend.core.services.report import (
+from core.database import SessionLocal
+from core.models import ResearchTask, TaskType
+from core.config import settings
+from core.services.report import (
     save_report,
     save_sources,
     save_agent_log,
@@ -60,7 +60,7 @@ def run_research(task_id: int):
 
 
 def _run_search_research(task_id: int, fields: dict):
-    from backend.core.graph.research_graph import research_graph
+    from core.graph.research_graph import research_graph
 
     db = SessionLocal()
     try:
@@ -144,7 +144,7 @@ def _run_search_research(task_id: int, fields: dict):
 
 
 def _run_website_research(task_id: int, fields: dict):
-    from backend.core.graph.website_research_graph import website_research_graph
+    from core.graph.website_research_graph import website_research_graph
 
     db = SessionLocal()
     try:

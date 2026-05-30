@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 
-from backend.core.database import get_db
-from backend.core.models import Report, Source, AgentLog, ResearchTask
-from backend.schemas.report import (
+from core.database import get_db
+from core.models import Report, Source, AgentLog, ResearchTask
+from schemas.report import (
     ReportResponse,
     SourceResponse,
     AgentLogResponse,
