@@ -5,7 +5,7 @@ services:
       dockerfile: backend/Dockerfile
     container_name: insight-hub
     ports:
-      - "8000:8000"
+      - "8002:8000"
     volumes:
       - ./backend/data:/app/backend/data
       - ./backend/reports:/app/backend/reports
