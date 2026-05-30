@@ -14,8 +14,6 @@
 
 ## 🚀 快速开始
 
-> 📖 **生产环境部署**请参考 [部署指南](./DEPLOY.md)
-
 ### 方式一：Docker 启动（推荐）
 
 #### 前置要求
@@ -129,8 +127,7 @@ insight-hub/
 │   │   ├── stores/        # Pinia 状态管理
 │   │   ├── views/         # 页面组件
 │   │   └── components/    # 通用组件
-│   ├── Dockerfile         # 前端 Docker 镜像
-│   └── nginx.conf         # Nginx 配置
+│   └── package.json
 │
 ├── backend/               # FastAPI 后端
 │   ├── api/               # REST + WebSocket 路由
@@ -140,13 +137,12 @@ insight-hub/
 │   │   └── services/      # 外部服务封装
 │   ├── schemas/           # Pydantic 数据模型
 │   ├── alembic/           # 数据库迁移
-│   ├── data/              # SQLite 数据库
-│   ├── logs/              # 应用日志
 │   ├── main.py            # FastAPI 入口
-│   └── Dockerfile         # 后端 Docker 镜像
+│   └── Dockerfile         # Docker 镜像（包含前端构建）
 │
+├── scripts/               # 部署脚本
 ├── docker-compose.yml     # Docker 编排配置
-├── start.sh               # 终端启动脚本（自动安装依赖）
+├── start.sh               # 终端启动脚本
 └── docker-start.sh        # Docker 启动脚本
 ```
 
@@ -243,6 +239,102 @@ alembic history
 
 ---
 
+## 🚀 生产部署
+
+### 架构说明
+
+```
+用户 → Nginx Proxy Manager → Python (端口 8002)
+                                    ├── /        → 前端页面
+                                    ├── /api/*   → 后端 API
+                                    └── /ws/*    → WebSocket
+```
+
+### 方式一：GitHub Actions 自动部署（推荐）
+
+代码推送到 `main` 分支时自动部署到服务器。
+
+#### 1. 服务器初始化
+
+```bash
+# SSH 登录服务器
+ssh root@your-server-ip
+
+# 安装 Docker
+curl -fsSL https://get.docker.com | sh
+
+# 创建项目目录
+mkdir -p /opt/insight-hub
+cd /opt/insight-hub
+git clone https://github.com/YOUR_USERNAME/insight-hub.git .
+cp .env.example .env
+vim .env  # 填写 API Key
+
+# 首次启动
+docker compose up -d --build
+```
+
+#### 2. 配置 GitHub Secrets
+
+在 GitHub 仓库页面：**Settings → Secrets and variables → Actions**
+
+添加以下 Secrets：
+
+| 名称 | 值 |
+|------|-----|
+| `SERVER_HOST` | 服务器 IP 地址 |
+| `SERVER_USER` | SSH 用户名（如 `root`） |
+| `SERVER_SSH_KEY` | SSH 私钥完整内容 |
+
+#### 3. 自动部署
+
+```bash
+git push origin main  # 自动触发部署
+```
+
+---
+
+### 方式二：手动部署
+
+```bash
+# 登录服务器
+ssh root@your-server-ip
+
+# 进入项目目录
+cd /opt/insight-hub
+
+# 使用部署脚本
+./scripts/deploy.sh
+
+# 或手动执行
+git pull origin main
+docker compose down
+docker compose up -d --build
+```
+
+---
+
+### 服务器要求
+
+| 项目 | 最低要求 | 推荐配置 |
+|------|----------|----------|
+| 操作系统 | Ubuntu 20.04 / CentOS 7 | Ubuntu 22.04 |
+| CPU | 1 核 | 2 核 |
+| 内存 | 1 GB | 2 GB |
+| 磁盘 | 20 GB | 40 GB |
+
+### 端口配置
+
+```bash
+# 防火墙配置（Ubuntu/Debian）
+ufw allow 8002/tcp  # 应用
+ufw allow 22/tcp    # SSH
+```
+
+**注意**：如果使用 Nginx Proxy Manager，配置代理到 `http://server-ip:8002` 即可。
+
+---
+
 ## ❓ 常见问题
 
 ### Q: Playwright 安装失败？
@@ -264,11 +356,30 @@ playwright install chromium --with-deps
 
 ### Q: 如何重置数据库？
 ```bash
-# 删除数据库文件
 rm backend/data/insight_hub.db
-
-# 重新运行迁移
 cd backend && alembic upgrade head
+```
+
+### Q: 部署失败怎么办？
+```bash
+# 查看服务器日志
+cd /opt/insight-hub
+docker compose logs -f
+```
+
+### Q: 如何回滚版本？
+```bash
+cd /opt/insight-hub
+git log --oneline
+git checkout <commit-hash>
+docker compose up -d --build
+```
+
+### Q: 如何更新环境变量？
+```bash
+cd /opt/insight-hub
+vim .env
+docker compose restart
 ```
 
 ---
