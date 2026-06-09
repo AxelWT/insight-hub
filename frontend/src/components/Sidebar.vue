@@ -24,7 +24,7 @@ const websiteForm = ref<TaskCreateParams>({
   model: 'deepseek',
   task_type: 'website',
   urls: [],
-  crawl_depth: 1,
+  crawl_depth: 0,
   max_pages: 20,
 })
 
@@ -100,21 +100,38 @@ async function handleSearchSubmit() {
   }
 }
 
-// 提交网站调研：校验主题和 URL 列表非空后创建任务，成功后跳转到调研详情页
+// 提交网站调研：校验 URL 列表非空后创建任务，主题由系统自动生成
 async function handleWebsiteSubmit() {
-  if (!websiteForm.value.topic.trim()) return
   if (!websiteForm.value.urls?.length) return
   submitting.value = true
   try {
+    // 自动生成调研主题：取前 3 个 URL 的域名
+    const domains = websiteForm.value.urls.slice(0, 3).map(url => {
+      try {
+        return new URL(url).hostname
+      } catch {
+        return url.slice(0, 30)
+      }
+    })
+    const autoTopic = domains.length > 2
+      ? `${domains[0]}、${domains[1]} 等网站调研`
+      : `${domains.join('、')} 网站调研`
+
+    // 如果调研问题为空，使用默认值
+    if (!websiteForm.value.questions?.trim()) {
+      websiteForm.value.questions = '汇总这些页面，生成简报'
+    }
+
     const task = await taskStore.addTask({
       ...websiteForm.value,
+      topic: autoTopic,
       task_type: 'website',
     })
     // 重置网站调研表单到初始状态
     websiteForm.value.topic = ''
     websiteForm.value.questions = ''
     websiteForm.value.urls = []
-    websiteForm.value.crawl_depth = 1
+    websiteForm.value.crawl_depth = 0
     websiteForm.value.max_pages = 20
     newUrl.value = ''
     formType.value = null
@@ -257,11 +274,6 @@ async function handleDelete(task: { id: number; topic: string }, event: Event) {
           <button class="vp-btn vp-btn-text" style="padding: 4px 8px; font-size: 18px" @click="formType = null">&times;</button>
         </div>
 
-        <div class="vp-form-item">
-          <label class="vp-form-label">调研主题</label>
-          <input v-model="websiteForm.topic" class="vp-input" placeholder="例如：竞品官网功能对比分析" />
-        </div>
-
         <!-- URL 列表管理：展示已添加的 URL，支持逐个删除 -->
         <div class="vp-form-item">
           <label class="vp-form-label">网站列表</label>
@@ -298,7 +310,7 @@ async function handleDelete(task: { id: number; topic: string }, event: Event) {
         <!-- 调研问题：引导 AI 针对网站内容进行定向分析 -->
         <div class="vp-form-item">
           <label class="vp-form-label">调研问题</label>
-          <textarea v-model="websiteForm.questions" class="vp-input" rows="3" placeholder="输入你希望 AI 分析的问题&#10;每行一个问题，例如：&#10;这些网站的核心功能有哪些差异？&#10;定价策略有什么不同？" />
+          <textarea v-model="websiteForm.questions" class="vp-input" rows="3" placeholder="汇总这些页面，生成简报" />
         </div>
 
         <!-- 爬取深度：控制是否自动发现并爬取子页面 -->
@@ -336,11 +348,11 @@ async function handleDelete(task: { id: number; topic: string }, event: Event) {
           </select>
         </div>
 
-        <!-- 提交按钮，主题或 URL 列表为空时禁用 -->
+        <!-- 提交按钮，URL 列表为空时禁用 -->
         <button
           class="vp-btn vp-btn-brand"
           style="width: 100%"
-          :disabled="submitting || !websiteForm.topic.trim() || !websiteForm.urls?.length"
+          :disabled="submitting || !websiteForm.urls?.length"
           @click="handleWebsiteSubmit"
         >
           {{ submitting ? '提交中...' : '开始调研' }}

@@ -17,6 +17,36 @@ MAX_RETRIES = 3
 # 单页内容最大保留长度（字符）
 CONTENT_MAX_LENGTH = 8000
 
+# 需要过滤的常见无意义路径模式
+SKIP_PATH_PATTERNS = [
+    "/internal",
+    "/external",
+    "/login",
+    "/register",
+    "/signup",
+    "/signin",
+    "/logout",
+    "/admin",
+    "/dashboard",
+    "/api/",
+    "/cdn-cgi/",
+    "/wp-admin",
+    "/wp-content",
+    "/feed",
+    "/rss",
+    "/sitemap",
+    "/robots.txt",
+    "/favicon.ico",
+]
+
+
+def _should_skip_url(url: str) -> bool:
+    """判断 URL 是否应该跳过，过滤常见的无意义路径"""
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    path = parsed.path.lower()
+    return any(pattern in path for pattern in SKIP_PATH_PATTERNS)
+
 
 def _get_base_domain(url: str) -> str:
     """提取基础域名，用于限制爬取范围
@@ -112,8 +142,8 @@ async def crawl_url(url: str, max_retries: int = MAX_RETRIES) -> dict:
                                 # 将相对链接转换为绝对链接
                                 full_url = urljoin(url, href)
                                 normalized = _normalize_url(full_url)
-                                # 只保留同域名的链接
-                                if _is_same_domain(full_url, base_domain):
+                                # 只保留同域名的链接，且过滤掉无意义路径
+                                if _is_same_domain(full_url, base_domain) and not _should_skip_url(full_url):
                                     internal_links.append(normalized)
 
                     logger.info(
@@ -203,11 +233,12 @@ async def crawl_urls_recursive(
         all_results.append(result)
 
         # 如果爬取成功且未达到最大深度，将发现的内部链接加入队列
-        if result["success"] and depth < max_pages:
+        if result["success"] and depth < max_depth:
             internal_links = result.get("internal_links", [])
             for link in internal_links:
                 if (
                     link not in visited
+                    and not _should_skip_url(link)
                     and len(all_results) + len(urls_to_crawl) < max_pages
                 ):
                     urls_to_crawl.append((link, depth + 1))

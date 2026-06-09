@@ -46,7 +46,7 @@ def _get_task_fields(task: ResearchTask) -> dict:
         "task_type": task.task_type or TaskType.SEARCH,
         "urls": task.urls or [],
         "questions": task.questions or "",
-        "crawl_depth": task.crawl_depth or 1,
+        "crawl_depth": task.crawl_depth if task.crawl_depth is not None else 0,
         "max_pages": task.max_pages or 20,
     }
 

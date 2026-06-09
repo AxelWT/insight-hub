@@ -17,8 +17,6 @@ from core.agents.searcher import searcher_agent
 from core.agents.crawler import crawler_agent
 from core.agents.evaluator import evaluator_agent
 from core.agents.writer import writer_agent
-from core.config import settings
-
 
 def route_after_evaluation(state: ResearchState) -> Literal["searcher", "writer"]:
     """评估后的条件路由：决定继续搜索还是开始撰写
