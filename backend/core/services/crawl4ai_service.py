@@ -163,7 +163,7 @@ async def crawl_urls_recursive(
     urls: list[str],
     max_depth: int = 1,
     max_pages: int = 20,
-    max_retries: int = max_retries,
+    max_retries: int = MAX_RETRIES,
 ) -> list[dict]:
     """递归爬取 URLs 及其子页面
 
@@ -221,7 +221,7 @@ async def crawl_urls_recursive(
     return all_results
 
 
-async def crawl_urls(urls: list[str], max_retries: int = max_retries) -> list[dict]:
+async def crawl_urls(urls: list[str], max_retries: int = MAX_RETRIES) -> list[dict]:
     """批量爬取指定 URLs（不递归，仅爬取输入的 URL 列表）
 
     Args:
@@ -247,7 +247,7 @@ def crawl_urls_sync(
     urls: list[str],
     max_depth: int = 0,
     max_pages: int = 20,
-    max_retries: int = max_retries,
+    max_retries: int = MAX_RETRIES,
 ) -> list[dict]:
     """同步版本的爬取函数
 
