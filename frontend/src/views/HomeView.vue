@@ -3,19 +3,24 @@ import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTaskStore } from '../stores/task'
 
+// 路由实例，用于编程式导航
 const router = useRouter()
+// 任务状态管理实例，提供任务列表数据和加载状态
 const taskStore = useTaskStore()
 
+// 组件挂载时获取任务列表，确保首页展示最新数据
 onMounted(() => {
   taskStore.fetchTasks()
 })
 
+// 调研深度枚举到中文标签的映射，用于前端展示
 const depthLabels: Record<string, string> = {
   quick: '快速',
   standard: '标准',
   deep: '深度',
 }
 
+// 任务状态到对应标签样式的映射，不同状态用不同颜色区分
 const statusTagClass: Record<string, string> = {
   pending: 'vp-tag-gray',
   planning: 'vp-tag-yellow',
@@ -27,6 +32,7 @@ const statusTagClass: Record<string, string> = {
   failed: 'vp-tag-red',
 }
 
+// 任务状态到中文标签的映射，用于前端展示
 const statusLabels: Record<string, string> = {
   pending: '等待中',
   planning: '规划中',
@@ -38,6 +44,7 @@ const statusLabels: Record<string, string> = {
   failed: '失败',
 }
 
+// 点击任务卡片时的导航逻辑：已完成跳转报告页，否则跳转调研详情页
 function goToTask(task: { id: number; status: string }) {
   if (task.status === 'completed') {
     router.push(`/report/${task.id}`)
@@ -46,6 +53,7 @@ function goToTask(task: { id: number; status: string }) {
   }
 }
 
+// 将 ISO 日期字符串格式化为中文简短格式（如 "6月1日 14:30"）
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('zh-CN', {
     month: 'short',
@@ -58,7 +66,7 @@ function formatDate(dateStr: string) {
 
 <template>
   <div>
-    <!-- Hero -->
+    <!-- 顶部英雄区域：展示平台标题和功能简介 -->
     <div class="hero-section">
       <h1>AI 调研平台</h1>
       <p class="hero-desc">
@@ -66,20 +74,23 @@ function formatDate(dateStr: string) {
       </p>
     </div>
 
-    <!-- Recent Tasks -->
+    <!-- 最近调研任务列表区域 -->
     <div class="section">
       <h2>最近调研</h2>
 
+      <!-- 加载状态提示 -->
       <div v-if="taskStore.loading" style="padding: 40px; text-align: center; color: var(--vp-c-text-3)">
         加载中...
       </div>
 
+      <!-- 空状态提示：引导用户创建新调研 -->
       <div v-else-if="taskStore.tasks.length === 0" class="empty-state">
         <div class="empty-icon">📋</div>
         <p>暂无调研记录</p>
         <p class="text-muted" style="font-size: 13px">在左侧点击「主题调研」或「网站调研」开始</p>
       </div>
 
+      <!-- 任务卡片网格，最多展示最近 12 条记录 -->
       <div v-else class="task-grid">
         <div
           v-for="task in taskStore.tasks.slice(0, 12)"
@@ -87,6 +98,7 @@ function formatDate(dateStr: string) {
           class="vp-card clickable task-card"
           @click="goToTask(task)"
         >
+          <!-- 卡片头部：标题 + 状态标签 -->
           <div class="task-card-header">
             <h3 class="task-card-title">{{ task.topic }}</h3>
             <span :class="['vp-tag', statusTagClass[task.status] || 'vp-tag-gray']">
@@ -94,10 +106,12 @@ function formatDate(dateStr: string) {
             </span>
           </div>
 
+          <!-- 任务描述，超过 80 字符截断显示 -->
           <div v-if="task.description" class="task-card-desc">
             {{ task.description.slice(0, 80) }}{{ task.description.length > 80 ? '...' : '' }}
           </div>
 
+          <!-- 卡片底部：类型标签 + 深度/层数 + 创建时间 -->
           <div class="task-card-footer">
             <div class="task-card-tags">
               <span :class="['type-badge', task.task_type === 'website' ? 'type-website' : 'type-search']">
@@ -115,10 +129,12 @@ function formatDate(dateStr: string) {
 </template>
 
 <style scoped>
+/* 顶部英雄区域的外边距，与下方内容拉开间距 */
 .hero-section {
   margin-bottom: 40px;
 }
 
+/* 标题使用品牌色渐变文字效果，增强视觉冲击力 */
 .hero-section h1 {
   font-size: 32px;
   font-weight: 700;
@@ -129,6 +145,7 @@ function formatDate(dateStr: string) {
   background-clip: text;
 }
 
+/* 功能简介文字样式，使用次要文字颜色降低视觉层级 */
 .hero-desc {
   color: var(--vp-c-text-2);
   font-size: 16px;
@@ -136,36 +153,43 @@ function formatDate(dateStr: string) {
   line-height: 1.7;
 }
 
+/* 分区标题样式 */
 .section h2 {
   font-size: 20px;
   margin: 0 0 20px;
 }
 
+/* 空状态居中布局，留足呼吸空间 */
 .empty-state {
   text-align: center;
   padding: 60px 20px;
 }
 
+/* 空状态图标尺寸 */
 .empty-icon {
   font-size: 48px;
   margin-bottom: 12px;
 }
 
+/* 空状态提示文字 */
 .empty-state p {
   margin: 4px 0;
   color: var(--vp-c-text-2);
 }
 
+/* 任务卡片网格：自适应列数，最小宽度 300px，保证卡片不会过窄 */
 .task-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 16px;
 }
 
+/* 任务卡片内边距 */
 .task-card {
   padding: 20px;
 }
 
+/* 卡片头部：标题与状态标签水平排列，两端对齐 */
 .task-card-header {
   display: flex;
   align-items: flex-start;
@@ -174,6 +198,7 @@ function formatDate(dateStr: string) {
   margin-bottom: 8px;
 }
 
+/* 卡片标题：最多显示两行，超出部分省略，防止长标题撑开布局 */
 .task-card-title {
   font-size: 15px;
   font-weight: 600;
@@ -186,6 +211,7 @@ function formatDate(dateStr: string) {
   overflow: hidden;
 }
 
+/* 卡片描述文字，使用最弱文字颜色降低视觉层级 */
 .task-card-desc {
   font-size: 13px;
   color: var(--vp-c-text-3);
@@ -193,6 +219,7 @@ function formatDate(dateStr: string) {
   margin-bottom: 12px;
 }
 
+/* 卡片底部：标签和时间左右分布 */
 .task-card-footer {
   display: flex;
   justify-content: space-between;
@@ -200,12 +227,14 @@ function formatDate(dateStr: string) {
   font-size: 12px;
 }
 
+/* 底部标签区域水平排列 */
 .task-card-tags {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
+/* 任务类型徽章基础样式 */
 .type-badge {
   display: inline-block;
   font-size: 11px;
@@ -215,11 +244,13 @@ function formatDate(dateStr: string) {
   line-height: 18px;
 }
 
+/* 主题调研类型：蓝色调 */
 .type-search {
   background: rgba(59, 130, 246, 0.1);
   color: #3b82f6;
 }
 
+/* 网站调研类型：绿色调，与主题调研做视觉区分 */
 .type-website {
   background: rgba(16, 185, 129, 0.1);
   color: #10b981;

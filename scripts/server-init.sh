@@ -1,29 +1,30 @@
 #!/bin/bash
 # Insight Hub 服务器初始化脚本
 # 使用方法: curl -fsSL https://raw.githubusercontent.com/YOUR_USERNAME/insight-hub/main/scripts/server-init.sh | bash
+# 在全新的 Linux 服务器上安装 Docker、Git 等必要工具，并拉取项目代码。
 
 set -e
 
 echo "🚀 Insight Hub 服务器初始化"
 echo "=========================="
 
-# 颜色定义
+# ========== 颜色定义 ==========
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-# 1. 安装 Docker
+# 步骤 1：安装 Docker（如果未安装）
 echo -e "${YELLOW}📦 安装 Docker...${NC}"
 if ! command -v docker &> /dev/null; then
     curl -fsSL https://get.docker.com | sh
-    systemctl enable docker
-    systemctl start docker
+    systemctl enable docker    # 设置开机自启
+    systemctl start docker     # 立即启动 Docker
     echo -e "${GREEN}✓ Docker 安装完成${NC}"
 else
     echo -e "${GREEN}✓ Docker 已安装${NC}"
 fi
 
-# 2. 安装 Docker Compose
+# 步骤 2：安装 Docker Compose 插件（如果未安装）
 echo -e "${YELLOW}📦 安装 Docker Compose...${NC}"
 if ! docker compose version &> /dev/null; then
     apt-get update
@@ -33,7 +34,7 @@ else
     echo -e "${GREEN}✓ Docker Compose 已安装${NC}"
 fi
 
-# 3. 安装 Git
+# 步骤 3：安装 Git（如果未安装）
 echo -e "${YELLOW}📦 安装 Git...${NC}"
 if ! command -v git &> /dev/null; then
     apt-get update
@@ -43,12 +44,12 @@ else
     echo -e "${GREEN}✓ Git 已安装${NC}"
 fi
 
-# 4. 创建项目目录
+# 步骤 4：创建项目部署目录
 echo -e "${YELLOW}📁 创建项目目录...${NC}"
 mkdir -p /opt/insight-hub
 cd /opt/insight-hub
 
-# 5. 克隆项目（如果还没有）
+# 步骤 5：克隆项目代码（如果目录为空）
 if [ ! -d ".git" ]; then
     echo -e "${YELLOW}📥 克隆项目...${NC}"
     echo "请输入 Git 仓库地址 (例如: https://github.com/username/insight-hub.git):"
@@ -59,9 +60,10 @@ else
     echo -e "${GREEN}✓ 项目已存在${NC}"
 fi
 
-# 6. 配置环境变量
+# 步骤 6：配置环境变量
 echo -e "${YELLOW}⚙️  配置环境变量...${NC}"
 if [ ! -f ".env" ]; then
+    # 从示例文件创建 .env
     cp .env.example .env
     echo -e "${YELLOW}请编辑 .env 文件填写 API Key:${NC}"
     echo "vim /opt/insight-hub/.env"
@@ -71,6 +73,7 @@ else
     echo -e "${GREEN}✓ .env 已存在${NC}"
 fi
 
+# 输出初始化完成信息和后续步骤
 echo ""
 echo -e "${GREEN}╔══════════════════════════════════════════╗${NC}"
 echo -e "${GREEN}║        ✅ 服务器初始化完成！             ║${NC}"

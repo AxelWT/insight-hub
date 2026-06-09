@@ -1,3 +1,9 @@
+"""主管 Agent - 规划搜索策略
+
+分析调研主题，拆解为多个搜索方向，生成具体的搜索关键词列表，
+按优先级排序供搜索 Agent 依次执行。
+"""
+
 import logging
 
 from core.graph.state import ResearchState
@@ -7,6 +13,11 @@ logger = logging.getLogger(__name__)
 
 
 def supervisor_agent(state: ResearchState) -> dict:
+    """主管 Agent：根据调研主题和深度生成搜索策略
+
+    利用大模型分析主题，输出结构化的搜索关键词列表，
+    关键词混合中英文以获取更全面的信息。
+    """
     logger.info("[supervisor] 节点开始: 规划搜索策略")
 
     topic = state["topic"]
@@ -15,6 +26,7 @@ def supervisor_agent(state: ResearchState) -> dict:
 
     logger.info(f"[supervisor] 调研主题: {topic} | 深度: {depth}")
 
+    # 根据深度调整搜索关键词数量
     depth_guide = {
         "quick": "生成 2-3 个搜索关键词，聚焦最核心的方面",
         "standard": "生成 4-6 个搜索关键词，覆盖主要方面",
@@ -52,6 +64,7 @@ def supervisor_agent(state: ResearchState) -> dict:
         temperature=0.3,
     )
 
+    # 解析模型输出：去除编号前缀和 Markdown 标题行
     queries = [
         q.strip().lstrip("0123456789.-) ")
         for q in response.strip().split("\n")
@@ -70,8 +83,8 @@ def supervisor_agent(state: ResearchState) -> dict:
 
     logger.info("[supervisor] 节点完成: 搜索策略规划成功")
     return {
-        "search_queries": queries,
-        "current_query": queries[0] if queries else topic,
+        "search_queries": queries,  # 全部搜索关键词
+        "current_query": queries[0] if queries else topic,  # 当前要执行的搜索词
         "current_step": "规划完成，开始搜索",
         "progress": 10,
         "agent_logs": state.get("agent_logs", []) + [log_entry],

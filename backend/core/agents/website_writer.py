@@ -1,3 +1,9 @@
+"""网站写作 Agent - 基于网站内容撰写调研报告
+
+分析爬取的网站内容，针对用户提出的问题进行深入分析，
+生成结构化的中文调研报告。
+"""
+
 import logging
 
 from core.graph.state import WebsiteResearchState
@@ -7,14 +13,22 @@ logger = logging.getLogger(__name__)
 
 
 def website_writer_agent(state: WebsiteResearchState) -> dict:
+    """网站写作 Agent：基于网站内容撰写调研报告
+
+    根据用户的问题和爬取的网站内容，调用大模型生成报告。
+    生成失败时回退到模板化简化报告。
+    """
     logger.info("[website_writer] 节点开始: 撰写网站调研报告")
 
     questions = state.get("questions", "")
     content = state.get("crawled_content", [])
     failed_urls = state.get("failed_urls", [])
 
-    logger.info(f"[website_writer] 调研问题: {questions[:100] if questions else '无'} | 爬取内容: {len(content)} 个 | 失败 URL: {len(failed_urls)} 个")
+    logger.info(
+        f"[website_writer] 调研问题: {questions[:100] if questions else '无'} | 爬取内容: {len(content)} 个 | 失败 URL: {len(failed_urls)} 个"
+    )
 
+    # 整理网站内容为材料文本
     materials = _build_materials(content)
 
     try:
@@ -23,6 +37,7 @@ def website_writer_agent(state: WebsiteResearchState) -> dict:
         )
         logger.info(f"[website_writer] 报告生成成功: {len(report)} 字符")
     except Exception as e:
+        # 主生成流程失败，使用备用方案
         logger.warning(f"[website_writer] 报告生成失败，使用备用方案: {e}")
         report = _generate_fallback_report(questions, content, failed_urls)
 
@@ -46,6 +61,12 @@ def website_writer_agent(state: WebsiteResearchState) -> dict:
 def _generate_report(
     questions: str, materials: str, failed_urls: list[dict], model: str
 ) -> str:
+    """调用大模型生成基于网站内容的调研报告
+
+    报告结构围绕用户问题展开，每个问题单独成章，
+    标注来源编号，客观呈现不同网站的观点。
+    """
+    # 构建爬取失败信息
     failed_info = ""
     if failed_urls:
         lines = "\n".join(f"- {f['url']}（原因: {f['error']}）" for f in failed_urls)
@@ -106,18 +127,21 @@ def _generate_report(
 def _generate_fallback_report(
     questions: str, content: list[dict], failed_urls: list[dict]
 ) -> str:
+    """备用报告生成：当 AI 生成失败时，用模板拼接简化版网站调研报告"""
     lines = ["# 网站调研报告\n"]
     lines.append("## 摘要\n")
     lines.append(
         f"本报告基于 {len(content)} 个网站内容整理而成，针对用户提出的问题进行分析。\n"
     )
 
+    # 列出用户问题
     if questions:
         lines.append("## 用户问题\n")
         for q in questions.strip().split("\n"):
             if q.strip():
                 lines.append(f"- {q.strip()}\n")
 
+    # 列出各网站内容摘要
     lines.append("## 网站内容汇总\n")
     for i, c in enumerate(content, 1):
         title = c.get("title", "无标题")
@@ -128,11 +152,13 @@ def _generate_fallback_report(
         if page_content:
             lines.append(f"{page_content[:2000]}\n")
 
+    # 列出爬取失败的网站
     if failed_urls:
         lines.append("## 爬取失败的网站\n")
         for f in failed_urls:
             lines.append(f"- {f['url']}（原因: {f['error']}）\n")
 
+    # 参考来源
     lines.append("## 参考来源\n")
     for i, c in enumerate(content, 1):
         lines.append(f"- [{i}] {c.get('title', '')} - {c.get('url', '')}")
@@ -143,6 +169,7 @@ def _generate_fallback_report(
 
 
 def _build_materials(content: list[dict]) -> str:
+    """将爬取的网站内容整理为研究材料文本"""
     parts = []
     for i, c in enumerate(content, 1):
         title = c.get("title", "无标题")
