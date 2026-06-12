@@ -5,17 +5,23 @@
 """
 
 import logging
-
 from tavily import TavilyClient
-
 from core.config import settings
 
 logger = logging.getLogger(__name__)
 
+_client: TavilyClient | None = None
+
 
 def get_client() -> TavilyClient:
-    """创建 Tavily API 客户端实例"""
-    return TavilyClient(api_key=settings.tavily_api_key)
+    """获取 Tavily API 客户端实例（单例）
+
+    每次调用都读取最新配置，确保运行时配置变更能生效。
+    """
+    global _client
+    if _client is None:
+        _client = TavilyClient(api_key=settings.tavily_api_key)
+    return _client
 
 
 def search(query: str, max_results: int | None = None, retries: int = 2) -> list[dict]:
@@ -33,7 +39,9 @@ def search(query: str, max_results: int | None = None, retries: int = 2) -> list
             client = get_client()
             response = client.search(
                 query=query,
-                max_results=max_results or settings.results_per_round,
+                max_results=max_results
+                if max_results is not None
+                else settings.results_per_round,
                 include_raw_content=False,  # 不返回原文，仅摘要
             )
             return response.get("results", [])
@@ -42,7 +50,6 @@ def search(query: str, max_results: int | None = None, retries: int = 2) -> list
             if attempt == retries:
                 logger.error(f"All search retries failed for '{query}'")
                 return []
-    return []
 
 
 def extract(urls: list[str], retries: int = 2) -> dict:
@@ -66,4 +73,3 @@ def extract(urls: list[str], retries: int = 2) -> dict:
             if attempt == retries:
                 logger.error("All extract retries failed")
                 return {"results": [], "failed_results": urls}
-    return {"results": [], "failed_results": urls}

@@ -42,7 +42,6 @@ SKIP_PATH_PATTERNS = [
 
 def _should_skip_url(url: str) -> bool:
     """判断 URL 是否应该跳过，过滤常见的无意义路径"""
-    from urllib.parse import urlparse
     parsed = urlparse(url)
     path = parsed.path.lower()
     return any(pattern in path for pattern in SKIP_PATH_PATTERNS)
@@ -143,7 +142,9 @@ async def crawl_url(url: str, max_retries: int = MAX_RETRIES) -> dict:
                                 full_url = urljoin(url, href)
                                 normalized = _normalize_url(full_url)
                                 # 只保留同域名的链接，且过滤掉无意义路径
-                                if _is_same_domain(full_url, base_domain) and not _should_skip_url(full_url):
+                                if _is_same_domain(
+                                    full_url, base_domain
+                                ) and not _should_skip_url(full_url):
                                     internal_links.append(normalized)
 
                     logger.info(
@@ -166,7 +167,7 @@ async def crawl_url(url: str, max_retries: int = MAX_RETRIES) -> dict:
                 f"[爬虫] 爬取失败: {url} | 第 {attempt + 1} 次 | 错误: {e} | {wait}s 后重试"
             )
             if attempt < max_retries - 1:
-                time.sleep(wait)
+                await asyncio.sleep(wait)
             else:
                 logger.error(f"[爬虫] 最终失败: {url} | 已重试 {max_retries} 次")
                 return {

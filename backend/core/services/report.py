@@ -168,18 +168,6 @@ def delete_report(db: Session, task_id: int) -> bool:
     return True
 
 
-def export_markdown(task_id: int, topic: str, content: str) -> str:
-    """导出报告为 Markdown 文件
-
-    Returns:
-        文件路径
-    """
-    filename = f"report_{task_id}_{_safe_filename(topic)}.md"
-    path = Path(settings.report_output_dir) / filename
-    path.write_text(content, encoding="utf-8")
-    return str(path)
-
-
 def _save_markdown_file(task_id: int, topic: str, content: str) -> str:
     """将报告内容保存为 Markdown 文件
 

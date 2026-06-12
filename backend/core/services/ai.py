@@ -119,17 +119,21 @@ def completion(
     Raises:
         Exception: 所有重试都失败后抛出最后一个异常
     """
+    truncated_messages = None
     for attempt in range(retries + 1):
         try:
-            # 检查消息总长度，超限时截断以避免 API 报错
             total_chars = sum(len(m.get("content", "")) for m in messages)
             if total_chars > 80000:
-                messages = _truncate_messages(messages, max_chars=80000)
+                if truncated_messages is None:
+                    truncated_messages = _truncate_messages(messages, max_chars=80000)
+                active_messages = truncated_messages
+            else:
+                active_messages = messages
 
             client, model_name = _get_client(model)
             response = client.chat.completions.create(
                 model=model_name,
-                messages=messages,
+                messages=active_messages,
                 temperature=temperature,
                 max_tokens=max_tokens,
                 stream=False,
@@ -182,17 +186,21 @@ def completion_json(
     Raises:
         Exception: 所有重试都失败后抛出最后一个异常
     """
+    truncated_messages = None
     for attempt in range(retries + 1):
         try:
-            # 检查消息总长度，超限时截断以避免 API 报错
             total_chars = sum(len(m.get("content", "")) for m in messages)
             if total_chars > 80000:
-                messages = _truncate_messages(messages, max_chars=80000)
+                if truncated_messages is None:
+                    truncated_messages = _truncate_messages(messages, max_chars=80000)
+                active_messages = truncated_messages
+            else:
+                active_messages = messages
 
             client, model_name = _get_client(model)
             response = client.chat.completions.create(
                 model=model_name,
-                messages=messages,
+                messages=active_messages,
                 temperature=temperature,
                 max_tokens=max_tokens,
                 response_format={"type": "json_object"},
