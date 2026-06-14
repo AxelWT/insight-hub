@@ -31,7 +31,6 @@ def search(query: str, max_results: int | None = None, retries: int = 2) -> list
             if attempt == retries:
                 logger.error(f"All search retries failed for '{query}'")
                 raise
-    return []
 
 
 def extract(urls: list[str], retries: int = 2) -> dict | None:
@@ -42,6 +41,5 @@ def extract(urls: list[str], retries: int = 2) -> dict | None:
         except Exception as e:
             logger.warning(f"Extract attempt {attempt + 1} failed for '{urls}': {e}")
             if attempt == retries:
-                logger.error(f"All extra retries failed for '{urls}'")
+                logger.error(f"All extract retries failed for '{urls}'")
                 return {"results": [], "failed_results": urls}
-    return {}

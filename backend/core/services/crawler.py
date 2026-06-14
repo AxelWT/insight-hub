@@ -75,7 +75,6 @@ async def crawl_page(url: str, timeout: int = 10, retries: int = 2) -> dict:
             if attempt == retries:
                 logger.error(f"[crawl_page] all retries failed for '{url}'")
                 return {"url": url, "title": "", "content": "", "error": str(e)}
-    return {"url": url, "title": "", "content": "", "error": "Fail to crawl"}
 
 
 def crawl_page_sync(url: str, timeout: int = 10, retries: int = 2) -> dict:
@@ -89,4 +88,3 @@ def crawl_page_sync(url: str, timeout: int = 10, retries: int = 2) -> dict:
             if attempt == retries:
                 logger.error(f"[crawl_page_sync] all retries failed for '{url}'")
                 return {"url": url, "title": "", "content": "", "error": str(e)}
-    return {"url": url, "title": "", "content": "", "error": "Fail to crawl"}

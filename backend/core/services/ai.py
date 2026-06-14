@@ -75,8 +75,8 @@ def completion(model: str, messages: list[dict],
                retries: int = 3, return_json: bool = False) -> str:
     for attempt in range(retries + 1):
         try:
-            total_tokens = sum(len(m.get("content", "")) for m in messages)
-            if total_tokens > 80000:
+            total_chars = sum(len(m.get("content", "")) for m in messages)
+            if total_chars > 80000:
                 active_messages = _truncate_messages(messages, 80000)
             else:
                 active_messages = messages
