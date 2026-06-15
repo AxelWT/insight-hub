@@ -1,4 +1,5 @@
-"""Tavily 搜索服务
+"""
+Tavily 搜索服务
 封装 Tavily API 的搜索和内容提取功能
 """
 

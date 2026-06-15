@@ -7,7 +7,7 @@
 import logging
 
 from core.graph.state import WebsiteResearchState
-from core.services.crawl4ai_service import crawl_urls_sync
+from core.services.crawl4ai import crawl_urls_sync
 
 logger = logging.getLogger(__name__)
 
