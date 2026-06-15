@@ -1,5 +1,5 @@
-"""爬虫 Agent - 爬取网页正文内容
-
+"""
+爬虫 Agent - 爬取网页正文内容
 对搜索结果中的 URL 进行内容爬取，优先使用 Tavily Extract API，
 失败时回退到基础 HTTP 爬虫，确保最大化内容获取率。
 """
@@ -22,7 +22,7 @@ def crawler_agent(state: ResearchState) -> dict:
     2. 对 Tavily 提取失败的 URL，回退到 HTTP 爬虫逐个爬取
     3. 自动去重，跳过已爬取的 URL
     """
-    logger.info("[crawler] 节点开始: 爬取网页内容")
+    logger.info("[step-3][crawler] 节点开始: 爬取网页内容")
 
     results = state.get("search_results", [])
     existing_content = state.get("crawled_content", [])
@@ -34,7 +34,7 @@ def crawler_agent(state: ResearchState) -> dict:
 
     # 如果没有新 URL 需要爬取，直接返回
     if not to_crawl:
-        logger.info("[crawler] 没有新的网页需要爬取")
+        logger.info("[step-3][crawler] 没有新的网页需要爬取")
         return {
             "crawled_content": existing_content,
             "current_step": "没有新的网页需要爬取",
@@ -43,7 +43,7 @@ def crawler_agent(state: ResearchState) -> dict:
         }
 
     urls = [r["url"] for r in to_crawl]
-    logger.info(f"[crawler] 待爬取 {len(urls)} 个网页")
+    logger.info(f"[step-3][crawler] 待爬取 {len(urls)} 个网页")
 
     crawled = []
     failed_urls = []
@@ -66,8 +66,8 @@ def crawler_agent(state: ResearchState) -> dict:
             f.get("url", f) if isinstance(f, dict) else f
             for f in response.get("failed_results", [])
         ]
-    except Exception:
-        # Tavily 完全失败，所有 URL 都需要回退爬取
+    except Exception as e:
+        logger.warning(f"[step-3][crawler] tavily extract failed: {e}")
         failed_urls = urls
 
     # 第二轮：对失败的 URL 使用基础 HTTP 爬虫逐个回退
@@ -86,9 +86,7 @@ def crawler_agent(state: ResearchState) -> dict:
     # 合并已有内容和新爬取的内容
     all_content = existing_content + crawled
 
-    logger.info(
-        f"[crawler] 爬取完成: 成功 {len(crawled)} 个 | 失败 {len(failed_urls)} 个 | 总计 {len(all_content)} 个"
-    )
+    logger.info(f"[step-3][crawler] 爬取完成: 成功 {len(crawled)} 个 | 失败 {len(failed_urls)} 个 | 总计 {len(all_content)} 个")
 
     log_entry = {
         "agent": "crawler",
@@ -98,7 +96,7 @@ def crawler_agent(state: ResearchState) -> dict:
         "output": [c["url"] for c in crawled],
     }
 
-    logger.info("[crawler] 节点完成: 网页爬取任务结束")
+    logger.info("[step-3][crawler] 节点完成: 网页爬取任务结束")
     return {
         "crawled_content": all_content,
         "current_step": f"已爬取 {len(all_content)} 个网页",

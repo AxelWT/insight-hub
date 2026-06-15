@@ -1,5 +1,5 @@
-"""主管 Agent - 规划搜索策略
-
+"""
+主管 Agent - 规划搜索策略
 分析调研主题，拆解为多个搜索方向，生成具体的搜索关键词列表，
 按优先级排序供搜索 Agent 依次执行。
 """
@@ -18,13 +18,13 @@ def supervisor_agent(state: ResearchState) -> dict:
     利用大模型分析主题，输出结构化的搜索关键词列表，
     关键词混合中英文以获取更全面的信息。
     """
-    logger.info("[supervisor] 节点开始: 规划搜索策略")
+    logger.info("[step-1][supervisor] 节点开始: 规划搜索策略")
 
     topic = state["topic"]
     description = state.get("description", "")
     depth = state.get("depth", "standard")
 
-    logger.info(f"[supervisor] 调研主题: {topic} | 深度: {depth}")
+    logger.info(f"[step-1][supervisor] 调研主题: {topic} | 深度: {depth}")
 
     # 根据深度调整搜索关键词数量
     depth_guide = {
@@ -58,7 +58,7 @@ def supervisor_agent(state: ResearchState) -> dict:
         user_prompt += f"\n补充说明: {description}"
 
     response = completion_with_system(
-        model=state.get("model", "openai/gpt-4o"),
+        model=state.get("model", "deepseek"),
         system_prompt=system_prompt,
         user_prompt=user_prompt,
         temperature=0.3,
@@ -71,7 +71,7 @@ def supervisor_agent(state: ResearchState) -> dict:
         if q.strip() and not q.strip().startswith("#")
     ]
 
-    logger.info(f"[supervisor] 生成 {len(queries)} 个搜索关键词: {queries}")
+    logger.info(f"[step-1][supervisor] 生成 {len(queries)} 个搜索关键词: {queries}")
 
     log_entry = {
         "agent": "supervisor",
@@ -81,7 +81,7 @@ def supervisor_agent(state: ResearchState) -> dict:
         "output": queries,
     }
 
-    logger.info("[supervisor] 节点完成: 搜索策略规划成功")
+    logger.info("[step-1][supervisor] 节点完成: 搜索策略规划成功")
     return {
         "search_queries": queries,  # 全部搜索关键词
         "current_query": queries[0] if queries else topic,  # 当前要执行的搜索词
