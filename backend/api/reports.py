@@ -1,8 +1,3 @@
-"""报告查询 API
-
-提供调研报告、信息来源和 Agent 日志的查询接口。
-"""
-
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 

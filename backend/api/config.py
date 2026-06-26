@@ -1,8 +1,3 @@
-"""配置查询 API
-
-提供前端所需的模型列表等配置信息。
-"""
-
 from fastapi import APIRouter
 from core.config import settings
 

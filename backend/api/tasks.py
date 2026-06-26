@@ -1,8 +1,3 @@
-"""任务管理 API
-
-提供调研任务的增删查接口，创建任务后自动在后台启动调研流程。
-"""
-
 import asyncio
 
 from fastapi import APIRouter, HTTPException

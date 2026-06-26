@@ -49,6 +49,7 @@ def _normalize_url(url: str) -> str:
 
 async def crawl_url(url: str, max_retries: int = MAX_RETRIES) -> dict:
     from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig
+
     base_domain = _get_base_domain(url)
     logger.info(f"[crawl_url] start to crawl, base_domain: {base_domain}")
 
@@ -66,21 +67,33 @@ async def crawl_url(url: str, max_retries: int = MAX_RETRIES) -> dict:
         try:
             logger.info(f"[crawl_url] attempt {attempt + 1} url: {url}")
 
-            async with AsyncWebCrawler(config=browser_config, run_config=run_config) as crawler:
-                result = await crawler.crawl(url=url, config=run_config)
+            async with AsyncWebCrawler(config=browser_config) as crawler:
+                result = await crawler.arun(url=url, config=run_config)
                 if result is not None and result.success:
                     title = ""
                     if result.metadata:
                         title = result.metadata.get("title", "")
                     content = (result.markdown or "")[:CONTENT_MAX_LENGTH]
                     if result.url and not _is_same_domain(result.url, base_domain):
-                        logger.warning(f"[crawl_url] skip url: {result.url}\n original url: {url}")
-                        return {"url": url, "title": "", "content": "", "success": False,
-                                "error": f"Redirect to outside web: {result.url}"}
+                        logger.warning(
+                            f"[crawl_url] skip url: {result.url}\n original url: {url}"
+                        )
+                        return {
+                            "url": url,
+                            "title": "",
+                            "content": "",
+                            "success": False,
+                            "error": f"Redirect to outside web: {result.url}",
+                        }
 
                     internal_links = []
                     if hasattr(result, "links") and result.links:
-                        for link in result.links:
+                        link_entries = []
+                        if isinstance(result.links, dict):
+                            link_entries = result.links.get("internal", [])
+                        elif isinstance(result.links, list):
+                            link_entries = result.links
+                        for link in link_entries:
                             if isinstance(link, dict):
                                 href = link.get("href", "")
                             elif isinstance(link, str):
@@ -89,30 +102,55 @@ async def crawl_url(url: str, max_retries: int = MAX_RETRIES) -> dict:
                                 continue
                             if href:
                                 full_url = urljoin(url, href)
-                                if _is_same_domain(full_url, base_domain) and not _should_skip_url(full_url):
+                                if _is_same_domain(
+                                    full_url, base_domain
+                                ) and not _should_skip_url(full_url):
                                     normalized_url = _normalize_url(full_url)
                                     internal_links.append(normalized_url)
                     logger.info(f"[crawl_url] internal links: {internal_links}")
-                    return {"url": url, "title": title, "content": content, "success": True, "error": None,
-                            "internal_links": internal_links}
+                    return {
+                        "url": url,
+                        "title": title,
+                        "content": content,
+                        "success": True,
+                        "error": None,
+                        "internal_links": internal_links,
+                    }
                 else:
                     logger.error(f"[crawl_url] fail to crawl url: {url}")
-                    raise Exception(result.error_message or f"[crawl_url] fail to crawl url: {url}")
+                    raise Exception(
+                        result.error_message or f"[crawl_url] fail to crawl url: {url}"
+                    )
         except Exception as e:
             wait = 2 * (attempt + 1)
             logger.warning(
-                f"[crawl_url] fail to crawl url: {url}, attempt: {attempt + 1}, error: {e}, wait: {wait}s and retry")
+                f"[crawl_url] fail to crawl url: {url}, attempt: {attempt + 1}, error: {e}, wait: {wait}s and retry"
+            )
             if attempt < max_retries - 1:
                 await asyncio.sleep(wait)
             else:
-                logger.error(f"[crawl_url] fail to crawl url: {url}, finish attempt: {attempt + 1}, error: {e}")
-                return {"url": url, "title": "", "content": "", "success": False, "error": str(e), "internal_links": []}
+                logger.error(
+                    f"[crawl_url] fail to crawl url: {url}, finish attempt: {attempt + 1}, error: {e}"
+                )
+                return {
+                    "url": url,
+                    "title": "",
+                    "content": "",
+                    "success": False,
+                    "error": str(e),
+                    "internal_links": [],
+                }
 
 
-async def crawl_urls_recursive(urls: list[str], max_depth: int = 1, max_pages: int = 20,
-                               max_retries: int = MAX_RETRIES) -> list[dict]:
+async def crawl_urls_recursive(
+    urls: list[str],
+    max_depth: int = 1,
+    max_pages: int = 20,
+    max_retries: int = MAX_RETRIES,
+) -> list[dict]:
     logger.info(
-        f"[crawl_urls_recursive] start to crawl, urls: {urls}, max_depth: {max_depth}, max_pages: {max_pages}, max_retries: {max_retries}")
+        f"[crawl_urls_recursive] start to crawl, urls: {urls}, max_depth: {max_depth}, max_pages: {max_pages}, max_retries: {max_retries}"
+    )
     all_results = []
     visited_urls = set()
     urls_to_crawl = [(url, 0) for url in urls]
@@ -125,7 +163,8 @@ async def crawl_urls_recursive(urls: list[str], max_depth: int = 1, max_pages: i
             continue
         visited_urls.add(normalized_url)
         logger.info(
-            f"[crawl_urls_recursive] visited url: {normalized_url}, crawl depth: {depth}/{max_depth} | visited urls: {len(all_results)}/{max_pages}")
+            f"[crawl_urls_recursive] visited url: {normalized_url}, crawl depth: {depth}/{max_depth} | visited urls: {len(all_results)}/{max_pages}"
+        )
 
         result = await crawl_url(url, max_retries=max_retries)
         all_results.append(result)
@@ -133,14 +172,21 @@ async def crawl_urls_recursive(urls: list[str], max_depth: int = 1, max_pages: i
         if result["success"] and depth < max_depth:
             internal_links = result.get("internal_links", [])
             for link in internal_links:
-                if (link not in visited_urls) and not _should_skip_url(link) and len(all_results) + len(
-                        urls_to_crawl) < max_pages:
+                if (
+                    (link not in visited_urls)
+                    and not _should_skip_url(link)
+                    and len(all_results) + len(urls_to_crawl) < max_pages
+                ):
                     urls_to_crawl.append((link, depth + 1))
-                    logger.debug(f"[crawl_urls_recursive] add internal link: {link}, depth:{depth + 1}")
+                    logger.debug(
+                        f"[crawl_urls_recursive] add internal link: {link}, depth:{depth + 1}"
+                    )
 
     succeeded = sum(1 for r in all_results if r["success"])
     failed = len(all_results) - succeeded
-    logger.info(f"[crawl_urls_recursive] succeeded: {succeeded}, failed: {failed}, total: {len(all_results)}")
+    logger.info(
+        f"[crawl_urls_recursive] succeeded: {succeeded}, failed: {failed}, total: {len(all_results)}"
+    )
     return all_results
 
 
@@ -157,12 +203,19 @@ async def crawl_urls(urls: list[str], max_retries: int = MAX_RETRIES) -> list[di
     return results
 
 
-def crawl_urls_sync(urls: list[str], max_depth: int = 0, max_pages: int = 20, max_retries: int = MAX_RETRIES) -> list[dict]:
+def crawl_urls_sync(
+    urls: list[str],
+    max_depth: int = 0,
+    max_pages: int = 20,
+    max_retries: int = MAX_RETRIES,
+) -> list[dict]:
     import concurrent.futures
 
     def _run_in_thread():
         if max_depth > 0:
-            return asyncio.run(crawl_urls_recursive(urls, max_depth, max_pages, max_retries))
+            return asyncio.run(
+                crawl_urls_recursive(urls, max_depth, max_pages, max_retries)
+            )
         else:
             return asyncio.run(crawl_urls(urls, max_retries))
 

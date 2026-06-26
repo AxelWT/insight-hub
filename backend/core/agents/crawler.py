@@ -8,7 +8,7 @@ import logging
 
 from core.graph.state import ResearchState
 from core.services.search import extract as tavily_extract
-from core.services.crawler import crawl_page_sync
+from core.services.crawl4ai import crawl_urls_sync
 from core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -73,15 +73,16 @@ def crawler_agent(state: ResearchState) -> dict:
     # 第二轮：对失败的 URL 使用基础 HTTP 爬虫逐个回退
     for url in failed_urls:
         if isinstance(url, str) and url:
-            page = crawl_page_sync(url)
-            if page.get("content"):
-                crawled.append(
-                    {
-                        "url": url,
-                        "content": page["content"][:6000],
-                        "source": "fallback",  # 标记为回退爬取
-                    }
-                )
+            pages = crawl_urls_sync([url])
+            for page in pages:
+                if page.get("content"):
+                    crawled.append(
+                        {
+                            "url": url,
+                            "content": page["content"][:6000],
+                            "source": "fallback",  # 标记为回退爬取
+                        }
+                    )
 
     # 合并已有内容和新爬取的内容
     all_content = existing_content + crawled

@@ -1,9 +1,3 @@
-"""WebSocket 实时通信模块
-
-管理与前端之间的 WebSocket 连接，
-支持按任务 ID 分组广播，实现调研进度的实时推送。
-"""
-
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 router = APIRouter()
