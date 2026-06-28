@@ -137,10 +137,10 @@ insight-hub/
 │   │   └── services/      # 外部服务封装
 │   ├── schemas/           # Pydantic 数据模型
 │   ├── alembic/           # 数据库迁移
-│   ├── main.py            # FastAPI 入口
-│   └── Dockerfile         # Docker 镜像（包含前端构建）
+│   └── main.py            # FastAPI 入口
 │
 ├── scripts/               # 部署脚本
+├── Dockerfile             # 多阶段镜像（构建前端 + 后端）
 ├── docker-compose.yml     # Docker 编排配置
 ├── start.sh               # 终端启动脚本
 └── docker-start.sh        # Docker 启动脚本

@@ -1,0 +1,36 @@
+# ===== 版本控制 / IDE 配置 =====
+.git
+.gitignore
+.github
+.idea
+.vscode
+
+# ===== Python 虚拟环境（体积大，绝不进镜像）=====
+.venv
+venv
+
+# ===== 环境变量（含密钥，绝不烤进镜像）=====
+# 运行时由 docker-compose 的 env_file 注入为环境变量，
+# pydantic-settings 优先读环境变量，故镜像无需包含 .env。
+**/.env
+**/.env.*
+
+# ===== Python 缓存与字节码 =====
+**/__pycache__
+**/*.pyc
+**/*.pyo
+
+# ===== 后端运行时数据（用 volume 持久化，不进镜像）=====
+backend/data
+backend/reports
+backend/logs
+**/*.db
+
+# ===== 前端依赖与本地构建产物 =====
+# 镜像内会重新执行 npm ci + npm run build，本地产物不应被拷入（否则会覆盖镜像内构建结果）
+node_modules
+frontend/node_modules
+frontend/dist
+
+# ===== 日志与临时文件 =====
+**/*.log

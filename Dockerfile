@@ -6,7 +6,7 @@ WORKDIR /app/frontend
 
 # 先复制依赖声明文件，利用 Docker 缓存层加速构建
 COPY frontend/package.json frontend/package-lock.json ./
-RUN npm ci    # 严格按 lock 文件安装，确保依赖版本一致
+RUN npm ci    # 严格按 lock 文件安装 确保依赖版本一致
 
 # 复制前端源码并构建
 COPY frontend/ .
@@ -37,9 +37,6 @@ COPY backend/ backend/
 # 从前端构建阶段复制构建产物（dist 目录）
 COPY --from=frontend-builder /app/frontend/dist frontend/dist
 
-# 复制环境配置文件（.env 或 .env.example）
-COPY .env* ./
-
 # 创建必要的数据目录
 RUN mkdir -p backend/data backend/reports backend/logs
 
@@ -47,7 +44,7 @@ RUN mkdir -p backend/data backend/reports backend/logs
 WORKDIR /app/backend
 
 # 暴露 FastAPI 服务端口
-EXPOSE 8000
+EXPOSE 8003
 
 # 启动命令：先执行数据库迁移，再启动 Web 服务
-CMD ["sh", "-c", "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8003"]
