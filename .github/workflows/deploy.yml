@@ -82,7 +82,7 @@ jobs:
           CUSTOM_BASE_URL: ${{ secrets.CUSTOM_BASE_URL }}
           CUSTOM_API_KEY: ${{ secrets.CUSTOM_API_KEY }}
           CUSTOM_MODEL_NAME: ${{ secrets.CUSTOM_MODEL_NAME }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL || 'sqlite:///./data/insight_hub.db' }}
           ACR_REGISTRY: ${{ secrets.ACR_REGISTRY }}
           ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
           ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}

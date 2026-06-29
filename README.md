@@ -9,8 +9,9 @@
 - **工作流引擎**: LangGraph
 - **LLM 框架**: LangChain + LiteLLM
 - **搜索 API**: Tavily
-- **网页爬取**: Crawl4AI + Playwright
+- **网页爬取**: Crawl4AI + Playwright + httpx + BeautifulSoup4
 - **数据库**: SQLite + SQLAlchemy + Alembic
+- **前端渲染**: Markdown-it
 
 ## 🚀 快速开始
 
@@ -106,6 +107,20 @@ DEEPSEEK_API_KEY=sk-xxx           # DeepSeek API Key
 CUSTOM_BASE_URL=https://xxx       # 自定义模型 API 地址
 CUSTOM_API_KEY=sk-xxx             # 自定义模型 API Key
 CUSTOM_MODEL_NAME=gpt-4           # 自定义模型名称
+
+# 模型与行为配置
+DEFAULT_MODEL=deepseek            # 默认模型（deepseek / custom）
+EVALUATOR_MODEL=deepseek          # 评估 Agent 专用模型
+
+# 调研深度配置
+QUICK_MAX_ROUNDS=1                # 快速调研最大轮次
+STANDARD_MAX_ROUNDS=3             # 标准调研最大轮次
+DEEP_MAX_ROUNDS=5                 # 深度调研最大轮次
+RESULTS_PER_ROUND=8               # 每轮搜索结果数
+
+# 存储配置
+DATABASE_URL=sqlite:///./data/insight_hub.db  # 数据库连接字符串
+REPORT_OUTPUT_DIR=./reports                     # 报告输出目录
 ```
 
 #### 获取 API Key
@@ -126,7 +141,9 @@ insight-hub/
 │   │   ├── api/           # API 请求封装
 │   │   ├── stores/        # Pinia 状态管理
 │   │   ├── views/         # 页面组件
-│   │   └── components/    # 通用组件
+│   │   ├── components/    # 通用组件
+│   │   ├── router/        # 路由配置
+│   │   └── styles/        # VitePress 风格全局样式
 │   └── package.json
 │
 ├── backend/               # FastAPI 后端
@@ -137,9 +154,11 @@ insight-hub/
 │   │   └── services/      # 外部服务封装
 │   ├── schemas/           # Pydantic 数据模型
 │   ├── alembic/           # 数据库迁移
+│   ├── data/              # SQLite 数据库目录
+│   ├── reports/           # Markdown 报告输出
+│   ├── logs/              # 日志文件目录
 │   └── main.py            # FastAPI 入口
 │
-├── scripts/               # 部署脚本
 ├── Dockerfile             # 多阶段镜像（构建前端 + 后端）
 ├── docker-compose.yml     # Docker 编排配置
 ├── start.sh               # 终端启动脚本
@@ -192,13 +211,22 @@ START → Website Crawler → Website Writer → END
 
 ### Agent 职责
 
+#### 主题调研
+
 | Agent | 职责 |
 |-------|------|
 | **Supervisor** | 调研主管，分析主题，制定搜索策略 |
-| **Searcher** | 搜索执行者，调用 Tavily API |
-| **Crawler** | 网页爬取者，抓取完整网页内容 |
-| **Evaluator** | 信息评估者，决定是否需要补充搜索 |
-| **Writer** | 报告撰写者，生成结构化报告 |
+| **Searcher** | 搜索执行者，调用 Tavily API，自动去重 |
+| **Crawler** | 网页爬取者，Tavily Extract → Crawl4AI 两级回退策略 |
+| **Evaluator** | 信息评估者，4维度评估（覆盖度/深度/多样性/时效性），决定是否补充搜索 |
+| **Writer** | 报告撰写者，生成结构化报告，每个论点标注来源 |
+
+#### 网站调研
+
+| Agent | 职责 |
+|-------|------|
+| **Website Crawler** | 网站深度爬取者，Crawl4AI 递归爬取指定网站 |
+| **Website Writer** | 网站内容撰写者，基于爬取内容生成报告 |
 
 ---
 
@@ -234,6 +262,7 @@ alembic history
 | `DELETE` | `/api/tasks/{id}` | 删除任务 |
 | `GET` | `/api/tasks/{id}/report` | 获取报告 |
 | `GET` | `/api/tasks/{id}/sources` | 获取来源列表 |
+| `GET` | `/api/tasks/{id}/logs` | 获取 Agent 执行日志 |
 | `GET` | `/api/config/models` | 获取可用模型 |
 | `WS` | `/api/ws/tasks/{id}` | 实时状态推送 |
 
@@ -291,9 +320,11 @@ mkdir -p /opt/insight-hub
 | | `ACR_NAMESPACE` | 命名空间 |
 | | `ACR_USERNAME` | 登录用户名 |
 | | `ACR_PASSWORD` | 登录密码 |
-| **服务器** | `ECS_HOST` | 服务器 IP 地址 |
-| | `ECS_USERNAME` | SSH 用户名（如 `root`） |
-| | `ECS_SSH_KEY` | SSH 私钥完整内容 |
+| **服务器** | `DEPLOY_HOST` | 服务器 IP 地址 |
+| | `DEPLOY_PORT` | SSH 端口（如 `22`） |
+| | `DEPLOY_USER` | SSH 用户名（如 `root`） |
+| | `DEPLOY_SSH_KEY` | SSH 私钥完整内容 |
+| | `DEPLOY_PATH` | 服务器部署路径（如 `/opt/insight-hub`） |
 | **应用配置** | `TAVILY_API_KEY` | Tavily 搜索 API Key |
 | | `DEEPSEEK_API_KEY` | DeepSeek API Key |
 | | `CUSTOM_BASE_URL` | 自定义模型 API 地址（可选） |
@@ -305,26 +336,6 @@ mkdir -p /opt/insight-hub
 
 ```bash
 git push origin main  # 自动触发构建和部署
-```
-
----
-
-### 方式二：手动部署
-
-```bash
-# 登录服务器
-ssh root@your-server-ip
-
-# 进入项目目录
-cd /opt/insight-hub
-
-# 使用部署脚本
-./scripts/deploy.sh
-
-# 或手动执行
-git pull origin main
-docker compose down
-docker compose up -d --build
 ```
 
 ---
