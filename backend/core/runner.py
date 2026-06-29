@@ -97,6 +97,8 @@ def _run_search_research(task_id: int, fields: dict):
             "depth": fields["depth"],
             "max_rounds": settings.get_max_rounds(fields["depth"]),
             "search_rounds": 0,
+            "search_queries": [],
+            "searched_queries": [],
             "search_results": [],
             "crawled_content": [],
             "agent_logs": [],

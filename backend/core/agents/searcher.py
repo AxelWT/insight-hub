@@ -1,10 +1,11 @@
 """
 搜索 Agent - 执行网络搜索
-根据Supervisor Agent 规划的搜索关键词，调用 Tavily 搜索 API 获取相关信息，
-自动去重，并管理搜索轮次。
+根据 Supervisor Agent 规划的搜索关键词，调用 Tavily 搜索 API 获取相关信息，
+自动去重，并管理搜索轮次。每轮搜索所有未搜索的关键词。
 """
 
 import logging
+from datetime import datetime
 
 from core.graph.state import ResearchState
 from core.services.search import search as tavily_search
@@ -13,81 +14,91 @@ from core.config import settings
 logger = logging.getLogger(__name__)
 
 
-def _get_next_query_index(queries: list[str], current_query: str) -> int:
-    """获取下一个搜索关键词的索引
-
-    在关键词列表中找到当前关键词的位置，返回下一个位置。
-    如果找不到，返回列表长度（即无下一个关键词）。
-    """
-    for i, q in enumerate(queries):
-        if q == current_query:
-            return i + 1
-    return len(queries)
+def _enhance_query_with_time(query: str) -> str:
+    now = datetime.now()
+    return f"{query} {now.year}年{now.month}月{now.day}日"
 
 
 def searcher_agent(state: ResearchState) -> dict:
-    """搜索 Agent：执行一轮搜索查询
+    """搜索 Agent：执行一轮搜索（搜索所有未搜索的关键词）
 
-    使用当前搜索关键词查询 Tavily，去重后合并到已有搜索结果中，
-    并准备下一个搜索关键词。
+    每轮搜索会遍历 search_queries 中所有尚未搜索过的关键词，
+    逐个调用 Tavily API，去重后合并到已有搜索结果中。
     """
     logger.info("[step-2][searcher] 节点开始: 执行搜索")
 
-    # 获取当前搜索关键词，如果没有指定则使用主题
-    query = state.get("current_query", state["topic"])
-    round_num = state.get("search_rounds", 0) + 1  # 当前轮次（从 1 开始）
-    existing_results = state.get("search_results", [])
-
-    logger.info(f"[step-2][searcher] 搜索关键词: {query} | 第 {round_num} 轮")
-
-    # 获取已有结果的 URL 集合，用于去重
-    existing_urls = {r.get("url") for r in existing_results}
-
-    # 调用 Tavily 搜索 API
-    results = tavily_search(query=query, max_results=settings.results_per_round)
-
-    # 过滤重复 URL，整理搜索结果
-    new_results = []
-    for r in results:
-        url = r.get("url", "")
-        if url and url not in existing_urls:
-            new_results.append(
-                {
-                    "url": url,
-                    "title": r.get("title", ""),
-                    "snippet": r.get("content", "") or r.get("snippet", ""),
-                    "search_round": round_num,  # 标记搜索轮次
-                    "relevance_score": r.get("score"),  # Tavily 返回的相关性评分
-                }
-            )
-
-    # 合并已有结果和新结果
-    all_results = existing_results + new_results
-
-    logger.info(f"[step-2][searcher] 搜索完成: 新增 {len(new_results)} 条结果 | 总计 {len(all_results)} 条")
-
-    # 确定下一个搜索关键词
     queries = state.get("search_queries", [])
-    next_query_idx = _get_next_query_index(queries, query)
-    next_query = queries[next_query_idx] if next_query_idx < len(queries) else None
+    searched = state.get("searched_queries", [])
+    existing_results = state.get("search_results", [])
+    round_num = state.get("search_rounds", 0) + 1
 
-    if next_query:
-        logger.info(f"[step-2][searcher] 下一个搜索关键词: {next_query}")
+    unsearched = [q for q in queries if q not in searched]
+
+    if not unsearched:
+        logger.info("[step-2][searcher] 无新的搜索关键词，跳过搜索")
+        return {
+            "search_rounds": round_num,
+            "current_step": "搜索完成，无新的关键词",
+            "progress": min(10 + round_num * 15, 50),
+            "agent_logs": state.get("agent_logs", []),
+        }
+
+    logger.info(
+        f"[step-2][searcher] 第 {round_num} 轮，共 {len(unsearched)} 个关键词待搜索: {unsearched}"
+    )
+
+    existing_urls = {r.get("url") for r in existing_results}
+    all_new_results = []
+    new_searched = list(searched)
+
+    for query in unsearched:
+        logger.info(f"[step-2][searcher] 搜索关键词: {query}")
+
+        results = tavily_search(
+            query=_enhance_query_with_time(query),
+            max_results=settings.results_per_round,
+        )
+
+        new_results = []
+        for r in results:
+            url = r.get("url", "")
+            if url and url not in existing_urls:
+                new_results.append(
+                    {
+                        "url": url,
+                        "title": r.get("title", ""),
+                        "snippet": r.get("content", "") or r.get("snippet", ""),
+                        "search_round": round_num,
+                        "relevance_score": r.get("score"),
+                    }
+                )
+                existing_urls.add(url)
+
+        all_new_results.extend(new_results)
+        new_searched.append(query)
+
+        logger.info(
+            f"[step-2][searcher] 关键词 '{query}' 完成: 新增 {len(new_results)} 条结果"
+        )
+
+    all_results = existing_results + all_new_results
 
     log_entry = {
         "agent": "searcher",
         "step": f"第 {round_num} 轮搜索",
-        "input": {"query": query, "round": round_num},
-        "decision": f"搜索关键词: {query}，找到 {len(new_results)} 条新结果（总计 {len(all_results)} 条）",
-        "output": [r["title"] for r in new_results[:5]],  # 只记录前 5 条标题
+        "input": {"queries": unsearched, "round": round_num},
+        "decision": f"搜索 {len(unsearched)} 个关键词，找到 {len(all_new_results)} 条新结果（总计 {len(all_results)} 条）",
+        "output": [r["title"] for r in all_new_results[:5]],
     }
 
-    logger.info("[step-2][searcher] 节点完成: 搜索任务结束")
+    logger.info(
+        f"[step-2][searcher] 节点完成: 本轮共新增 {len(all_new_results)} 条结果"
+    )
     return {
         "search_results": all_results,
+        "searched_queries": new_searched,
         "search_rounds": round_num,
-        "current_step": f"第 {round_num} 轮搜索完成，共找到 {len(all_results)} 条结果",
-        "progress": min(10 + round_num * 15, 50),  # 进度：10% 起，每轮 +15%，上限 50%
+        "current_step": f"第 {round_num} 轮搜索完成（{len(unsearched)} 个关键词），共找到 {len(all_results)} 条结果",
+        "progress": min(10 + round_num * 15, 50),
         "agent_logs": state.get("agent_logs", []) + [log_entry],
-        "current_query": next_query or query,  # 下轮搜索词，没有则沿用当前
     }

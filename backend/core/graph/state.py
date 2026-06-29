@@ -21,7 +21,7 @@ class ResearchState(TypedDict, total=False):
     max_rounds: int  # 最大搜索轮次
     search_rounds: int  # 当前已完成搜索轮次
     search_queries: list[str]  # 主管 Agent 生成的搜索关键词列表
-    current_query: str  # 当前正在执行的搜索关键词
+    searched_queries: list[str]  # 已搜索过的关键词列表（用于去重）
     search_results: list[dict]  # 累计搜索结果
     crawled_content: list[dict]  # 累计爬取内容
     evaluation: str  # 评估 Agent 的原始输出文本

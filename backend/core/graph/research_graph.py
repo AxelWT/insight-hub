@@ -18,6 +18,7 @@ from core.agents.crawler import crawler_agent
 from core.agents.evaluator import evaluator_agent
 from core.agents.writer import writer_agent
 
+
 def route_after_evaluation(state: ResearchState) -> Literal["searcher", "writer"]:
     """评估后的条件路由：决定继续搜索还是开始撰写
 
@@ -40,8 +41,6 @@ def route_after_evaluation(state: ResearchState) -> Literal["searcher", "writer"
     # 使用评估建议的关键词继续搜索
     suggested = state.get("suggested_queries", [])
     if suggested:
-        # 将建议关键词加入搜索队列，并设置当前搜索词
-        state["current_query"] = suggested[0]
         state["search_queries"] = state.get("search_queries", []) + suggested
         return "searcher"
 

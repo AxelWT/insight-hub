@@ -83,8 +83,8 @@ def supervisor_agent(state: ResearchState) -> dict:
 
     logger.info("[step-1][supervisor] 节点完成: 搜索策略规划成功")
     return {
-        "search_queries": queries,  # 全部搜索关键词
-        "current_query": queries[0] if queries else topic,  # 当前要执行的搜索词
+        "search_queries": queries,
+        "searched_queries": [],
         "current_step": "规划完成，开始搜索",
         "progress": 10,
         "agent_logs": state.get("agent_logs", []) + [log_entry],
