@@ -27,7 +27,7 @@ const { theme, toggleTheme } = useThemeProvider()
       </div>
     </main>
     <footer class="vp-footer">
-      insightHub©2026 · AI 调研平台
+      InsightHub©2026 · AI 调研平台
     </footer>
   </div>
 </template>

@@ -163,6 +163,7 @@ function formatDate(dateStr: string) {
   margin: 0;
   line-height: 1.7;
   max-width: 600px;
+  white-space: nowrap;
 }
 
 .section h2 {
