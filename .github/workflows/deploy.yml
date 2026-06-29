@@ -61,6 +61,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # 确保远程目录存在且权限正确
+      - name: Ensure deploy directory exists
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          port: ${{ secrets.DEPLOY_PORT || '22' }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            mkdir -p ${{ secrets.DEPLOY_PATH || '/app/insight-hub' }}
+            sudo chown -R $USER:$USER ${{ secrets.DEPLOY_PATH || '/app/insight-hub' }}
+
       # 将 docker-compose.yml 复制到服务器
       - name: Copy docker-compose.yml to server
         uses: appleboy/scp-action@v0.1.7
