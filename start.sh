@@ -177,7 +177,7 @@ check_and_install_deps
 # 4. 启动后端服务（uvicorn 热重载模式）
 echo -e "${BLUE}🚀 启动后端服务...${NC}"
 cd backend
-python -m uvicorn main:app --reload --port 8000 --host 0.0.0.0 &
+python -m uvicorn main:app --reload --port 8003 --host 0.0.0.0 &
 BACKEND_PID=$!
 cd ..
 
@@ -186,7 +186,7 @@ echo -e "${YELLOW}等待后端服务启动...${NC}"
 sleep 3
 
 # 健康检查：确认后端是否启动成功
-if curl -s http://localhost:8000/health > /dev/null 2>&1; then
+if curl -s http://localhost:8003/health > /dev/null 2>&1; then
     echo -e "${GREEN}✓ 后端服务已启动${NC}"
 else
     echo -e "${RED}❌ 后端服务启动失败，请检查日志${NC}"
@@ -208,8 +208,8 @@ echo ""
 echo -e "${GREEN}╔══════════════════════════════════════════╗${NC}"
 echo -e "${GREEN}║           ✅ 启动成功！                  ║${NC}"
 echo -e "${GREEN}╠══════════════════════════════════════════╣${NC}"
-echo -e "${GREEN}║  后端 API:  http://localhost:8000        ║${NC}"
-echo -e "${GREEN}║  API 文档:  http://localhost:8000/docs   ║${NC}"
+echo -e "${GREEN}║  后端 API:  http://localhost:8003        ║${NC}"
+echo -e "${GREEN}║  API 文档:  http://localhost:8003/docs   ║${NC}"
 echo -e "${GREEN}║  前端界面:  http://localhost:5173        ║${NC}"
 echo -e "${GREEN}╚══════════════════════════════════════════╝${NC}"
 echo ""

@@ -77,7 +77,7 @@ cd insight-hub
 ```bash
 # 启动后端
 cd backend
-python -m uvicorn main:app --reload --port 8000
+python -m uvicorn main:app --reload --port 8003
 
 # 新终端，启动前端
 cd frontend
@@ -155,16 +155,16 @@ insight-hub/
 | 服务 | 地址 | 说明 |
 |------|------|------|
 | 前端界面 | http://localhost:5173 | Vue 前端 |
-| 后端 API | http://localhost:8000 | FastAPI 后端 |
-| API 文档 | http://localhost:8000/docs | Swagger UI |
+| 后端 API | http://localhost:8003 | FastAPI 后端 |
+| API 文档 | http://localhost:8003/docs | Swagger UI |
 
 ### Docker 启动（生产模式）
 
 | 服务 | 地址 | 说明 |
 |------|------|------|
-| 应用 | http://localhost:8002 | 前端 + 后端 |
-| API 文档 | http://localhost:8002/docs | Swagger UI |
-| 健康检查 | http://localhost:8002/health | 服务状态 |
+| 应用 | http://localhost:8003 | 前端 + 后端 |
+| API 文档 | http://localhost:8003/docs | Swagger UI |
+| 健康检查 | http://localhost:8003/health | 服务状态 |
 
 ---
 
@@ -250,7 +250,7 @@ GitHub Actions
             ↓
 服务器拉取镜像并启动
             ↓
-用户 → Nginx Proxy Manager → Python (端口 8002)
+用户 → Nginx Proxy Manager → Python (端口 8003)
                                     ├── /        → 前端页面
                                     ├── /api/*   → 后端 API
                                     └── /ws/*    → WebSocket
@@ -342,11 +342,11 @@ docker compose up -d --build
 
 ```bash
 # 防火墙配置（Ubuntu/Debian）
-ufw allow 8002/tcp  # 应用
+ufw allow 8003/tcp  # 应用
 ufw allow 22/tcp    # SSH
 ```
 
-**注意**：如果使用 Nginx Proxy Manager，配置代理到 `http://server-ip:8002` 即可。
+**注意**：如果使用 Nginx Proxy Manager，配置代理到 `http://server-ip:8003` 即可。
 
 ---
 
