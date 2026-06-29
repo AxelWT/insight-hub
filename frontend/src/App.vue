@@ -26,6 +26,9 @@ const { theme, toggleTheme } = useThemeProvider()
         <router-view />
       </div>
     </main>
+    <footer class="vp-footer">
+      insightHub©2026 · AI 调研平台
+    </footer>
   </div>
 </template>
 
