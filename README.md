@@ -13,7 +13,7 @@
 - **数据库**: SQLite + SQLAlchemy + Alembic
 - **前端渲染**: Markdown-it
 
-## 🚀 快速开始
+## 快速开始
 
 ### 方式一：Docker 启动（推荐）
 
