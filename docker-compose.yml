@@ -11,7 +11,7 @@ services:
       dockerfile: Dockerfile
     container_name: insight-hub
     ports:
-      - "8002:8003"  # 宿主机 8002 映射到容器 8003
+      - "8003:8003"  # 宿主机 8003 映射到容器 8003
     volumes:
       - ./backend/data:/app/backend/data       # 持久化 SQLite 数据库
       - ./backend/reports:/app/backend/reports  # 持久化导出的报告文件
