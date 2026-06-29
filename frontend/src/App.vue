@@ -1,19 +1,59 @@
-<!-- 根组件 - 定义应用的整体布局结构 -->
 <script setup lang="ts">
+import { useThemeProvider } from './composables/theme'
 import Sidebar from './components/Sidebar.vue'
+
+const { theme, toggleTheme } = useThemeProvider()
 </script>
 
 <template>
-  <!-- VitePress 风格布局：左侧边栏 + 右侧主内容区 -->
+  <div class="bg-grid" />
+  <div class="bg-glow" />
+  <div class="bg-glow" />
+  <div class="bg-glow" />
+  <button
+    class="theme-toggle-float"
+    :title="theme === 'dark' ? '切换到亮色' : '切换到暗色'"
+    @click="toggleTheme()"
+  >
+    {{ theme === 'dark' ? '☀' : '☾' }}
+  </button>
   <div class="vp-layout">
     <aside class="vp-sidebar">
       <Sidebar />
     </aside>
     <main class="vp-main">
       <div class="vp-main-content">
-        <!-- 路由视图：根据当前 URL 渲染对应的页面组件 -->
         <router-view />
       </div>
     </main>
   </div>
 </template>
+
+<style scoped>
+.theme-toggle-float {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 100;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: var(--vp-radius-sm);
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-2);
+  cursor: pointer;
+  font-size: 16px;
+  transition: all var(--vp-transition);
+  padding: 0;
+  line-height: 1;
+}
+
+.theme-toggle-float:hover {
+  color: var(--vp-c-brand);
+  border-color: var(--vp-c-brand);
+  background: var(--vp-c-brand-bg);
+}
+</style>
